@@ -1,421 +1,421 @@
 <template>
-  <div class="space-y-4">
-    <div class="page-header">
-      <div>
-        <h1 class="page-title text-xl">Create Deployment</h1>
-        <p class="text-gray-400 text-sm">Record a new deployment</p>
+  <div class="h-full flex flex-col">
+    <!-- Favorites Section - Takes top portion -->
+    <div class="flex-shrink-0 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-medium text-gray-400">Quick Select</h2>
+        <button
+          @click="showAllProjects = !showAllProjects"
+          class="text-xs text-[#4a9eff] hover:underline"
+        >
+          {{ showAllProjects ? 'Show less' : 'Browse all' }}
+        </button>
+      </div>
+
+      <!-- Favorites Grid -->
+      <div class="grid grid-cols-4 gap-2" v-if="!showAllProjects">
+        <button
+          v-for="fav in displayedFavorites"
+          :key="fav.value"
+          @click="selectProjectComponent(fav.value)"
+          :class="[
+            'p-3 rounded-lg border-2 transition-all text-left',
+            selectedValue === fav.value
+              ? 'bg-[#4a9eff]/20 border-[#4a9eff] ring-2 ring-[#4a9eff]/30'
+              : 'bg-[#353535] border-[#444444] hover:border-[#4a9eff]/50'
+          ]"
+        >
+          <div class="text-xs text-gray-400 truncate">{{ fav.projectName }}</div>
+          <div class="text-sm font-medium text-white truncate">{{ fav.componentName }}</div>
+          <div class="text-xs text-gray-500 mt-1">{{ fav.count || 0 }} deploys</div>
+        </button>
+
+        <!-- Add/Search button -->
+        <button
+          @click="showAllProjects = true"
+          class="p-3 rounded-lg border-2 border-dashed border-[#555555] hover:border-[#4a9eff] transition-all flex flex-col items-center justify-center text-gray-400 hover:text-[#4a9eff]"
+        >
+          <Search class="w-5 h-5 mb-1" />
+          <span class="text-xs">Search All</span>
+        </button>
+      </div>
+
+      <!-- Searchable Project List (expanded view) -->
+      <div v-else class="bg-[#353535] rounded-lg border border-[#444444] p-3">
+        <div class="relative mb-3">
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search projects or components..."
+            class="w-full pl-9 pr-3 py-2 text-sm bg-[#2a2a2a] border border-[#555555] rounded-lg focus:outline-none focus:border-[#4a9eff] text-white placeholder-gray-500"
+            autofocus
+          />
+        </div>
+        <div class="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+          <button
+            v-for="option in filteredOptions"
+            :key="option.value"
+            @click="selectProjectComponent(option.value); showAllProjects = false"
+            :class="[
+              'p-2 rounded-lg border transition-all text-left',
+              selectedValue === option.value
+                ? 'bg-[#4a9eff]/20 border-[#4a9eff]'
+                : 'bg-[#404040] border-[#555555] hover:border-[#4a9eff]/50'
+            ]"
+          >
+            <div class="text-xs text-gray-400 truncate">{{ option.project.name }}</div>
+            <div class="text-sm font-medium text-white truncate">{{ option.component.name }}</div>
+          </button>
+        </div>
       </div>
     </div>
 
-    <Card title="Deployment Information">
-      <form @submit.prevent="handleSubmit" class="space-y-4">
-        <!-- Project and Component Selection -->
-        <div class="grid grid-cols-2 gap-3">
-          <Select
-            v-model="form.project_id"
-            :options="projectNames"
-            label="Project"
-            required
-            @update:model-value="handleProjectChange"
-          />
-          <Select
-            v-model="form.component_id"
-            :options="componentNames"
-            label="Component"
-            required
-            :disabled="!form.project_id"
-          />
+    <!-- Main Deploy Form - Compact when favorite selected -->
+    <div v-if="selectedOption" class="flex-1 flex flex-col">
+      <!-- Selected Info Bar -->
+      <div class="flex items-center gap-4 p-3 bg-[#4a9eff]/10 border border-[#4a9eff]/30 rounded-lg mb-4">
+        <div class="flex-1">
+          <span class="text-[#4a9eff] font-medium">{{ selectedOption.project.name }}</span>
+          <span class="text-gray-400 mx-2">›</span>
+          <span class="text-white font-medium">{{ selectedOption.component.name }}</span>
         </div>
-
-        <!-- Auto-filled Section (Compact) -->
-        <div v-if="selectedComponent" class="p-3 bg-[#353535] rounded-lg border border-[#444444] text-xs">
-          <h3 class="text-xs font-medium text-gray-500 mb-2">Auto-filled (Read-only)</h3>
-          <div class="grid grid-cols-3 gap-2">
-            <div>
-              <span class="text-gray-500">Component:</span>
-              <span class="text-gray-300 ml-1">{{ autoFilled.component_name }}</span>
-            </div>
-            <div>
-              <span class="text-gray-500">Developer:</span>
-              <span class="text-gray-300 ml-1">{{ autoFilled.developer }}</span>
-            </div>
-            <div>
-              <span class="text-gray-500">Environment:</span>
-              <span class="text-gray-300 ml-1">{{ autoFilled.environment }}</span>
-            </div>
-            <div>
-              <span class="text-gray-500">Build Server:</span>
-              <span class="text-gray-300 ml-1">{{ autoFilled.build_server }}</span>
-            </div>
-            <div>
-              <span class="text-gray-500">Deploy Server:</span>
-              <span class="text-gray-300 ml-1">{{ autoFilled.deploy_server }}</span>
-            </div>
-            <div>
-              <span class="text-gray-500">Database:</span>
-              <span class="text-gray-300 ml-1">{{ autoFilled.database_name }}</span>
-            </div>
-          </div>
-          <div class="mt-2">
-            <span class="text-gray-500">VCS:</span>
-            <span class="text-gray-300 ml-1 break-all">{{ autoFilled.vcs_url }}</span>
-          </div>
+        <div class="text-xs text-gray-400 flex gap-4">
+          <span>Env: <span class="text-gray-300">{{ selectedOption.project.environment }}</span></span>
+          <span>Build: <span class="text-gray-300">{{ selectedOption.project.build_server }}</span></span>
+          <span>Deploy: <span class="text-gray-300">{{ selectedOption.project.deploy_server }}</span></span>
         </div>
+        <button @click="clearSelection" class="text-gray-400 hover:text-white">
+          <X class="w-4 h-4" />
+        </button>
+      </div>
 
-        <!-- Deployment Details -->
-        <div class="space-y-3 p-3 bg-[#404040] rounded-lg border border-[#555555]">
-          <div class="grid grid-cols-2 gap-3">
-            <Input
-              v-model="form.jira_id"
-              label="Patch ID"
-              placeholder="e.g., PAT-123 (optional)"
-            />
-            <div class="flex gap-2 items-end">
-              <Input
-                v-model="form.timestamp"
-                label="Timestamp"
-                type="datetime-local"
-                required
-                class="flex-1"
+      <!-- Quick Input Row -->
+      <div class="bg-[#353535] rounded-lg border border-[#444444] p-4">
+        <div class="flex items-end gap-4">
+          <!-- Patch ID with PAT- prefix -->
+          <div class="flex-1">
+            <label class="text-xs font-medium text-gray-400 block mb-1.5">Patch ID</label>
+            <div class="flex items-center">
+              <span class="px-3 py-2 bg-[#2a2a2a] border border-r-0 border-[#555555] rounded-l-lg text-gray-400 text-sm">
+                PAT-
+              </span>
+              <input
+                v-model="patchNumber"
+                type="text"
+                placeholder="123"
+                class="flex-1 px-3 py-2 bg-[#404040] border border-[#555555] text-white text-sm focus:outline-none focus:border-[#4a9eff]"
+                :class="noPatchId ? 'opacity-50' : ''"
+                :disabled="noPatchId"
+                @keydown.enter="handleSubmit"
               />
-              <Button type="button" @click="setCurrentTimestamp" variant="secondary" size="sm">
-                <Clock class="w-3 h-3" />
-                Now
-              </Button>
+              <button
+                @click="toggleNoPatchId"
+                :class="[
+                  'px-3 py-2 border border-l-0 border-[#555555] rounded-r-lg text-sm transition-all',
+                  noPatchId
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-[#2a2a2a] text-gray-400 hover:text-orange-400'
+                ]"
+                :title="noPatchId ? 'Patch ID skipped' : 'Click to skip Patch ID'"
+              >
+                <X class="w-4 h-4" />
+              </button>
+            </div>
+            <div v-if="noPatchId" class="text-xs text-orange-400 mt-1">No Patch ID</div>
+          </div>
+
+          <!-- Status Toggles (compact) -->
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-400">Build:</span>
+              <button
+                @click="form.build_status = 'success'"
+                :class="[
+                  'px-2 py-1 text-xs rounded-l',
+                  form.build_status === 'success' ? 'bg-green-600 text-white' : 'bg-[#404040] text-gray-400'
+                ]"
+              >✓</button>
+              <button
+                @click="form.build_status = 'failed'"
+                :class="[
+                  'px-2 py-1 text-xs rounded-r',
+                  form.build_status === 'failed' ? 'bg-red-600 text-white' : 'bg-[#404040] text-gray-400'
+                ]"
+              >✗</button>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-400">Deploy:</span>
+              <button
+                @click="form.deploy_status = 'success'"
+                :class="[
+                  'px-2 py-1 text-xs rounded-l',
+                  form.deploy_status === 'success' ? 'bg-green-600 text-white' : 'bg-[#404040] text-gray-400'
+                ]"
+              >✓</button>
+              <button
+                @click="form.deploy_status = 'failed'"
+                :class="[
+                  'px-2 py-1 text-xs rounded-r',
+                  form.deploy_status === 'failed' ? 'bg-red-600 text-white' : 'bg-[#404040] text-gray-400'
+                ]"
+              >✗</button>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-400">DB:</span>
+              <button
+                @click="form.has_db_script = !form.has_db_script"
+                :class="[
+                  'px-2 py-1 text-xs rounded',
+                  form.has_db_script ? 'bg-blue-600 text-white' : 'bg-[#404040] text-gray-400'
+                ]"
+              >{{ form.has_db_script ? 'Yes' : 'No' }}</button>
             </div>
           </div>
 
-          <!-- Radio Buttons Row -->
-          <div class="grid grid-cols-3 gap-4">
-            <!-- Database Script -->
-            <div>
-              <label class="text-xs font-medium text-gray-300 block mb-1">DB Script</label>
-              <div class="flex items-center gap-3">
-                <label class="flex items-center gap-1 cursor-pointer text-sm">
-                  <input v-model="form.database_script" type="radio" :value="false" class="w-3 h-3" />
-                  <span>No</span>
-                </label>
-                <label class="flex items-center gap-1 cursor-pointer text-sm">
-                  <input v-model="form.database_script" type="radio" :value="true" class="w-3 h-3" />
-                  <span>Yes</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Build Status -->
-            <div>
-              <label class="text-xs font-medium text-gray-300 block mb-1">Build Status</label>
-              <div class="flex items-center gap-3">
-                <label class="flex items-center gap-1 cursor-pointer text-sm">
-                  <input v-model="form.build_status" type="radio" value="success" class="w-3 h-3" />
-                  <span class="text-green-400">Success</span>
-                </label>
-                <label class="flex items-center gap-1 cursor-pointer text-sm">
-                  <input v-model="form.build_status" type="radio" value="failed" class="w-3 h-3" />
-                  <span class="text-red-400">Failed</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Deploy Status -->
-            <div>
-              <label class="text-xs font-medium text-gray-300 block mb-1">Deploy Status</label>
-              <div class="flex items-center gap-3">
-                <label class="flex items-center gap-1 cursor-pointer text-sm">
-                  <input v-model="form.deploy_status" type="radio" value="success" class="w-3 h-3" />
-                  <span class="text-green-400">Success</span>
-                </label>
-                <label class="flex items-center gap-1 cursor-pointer text-sm">
-                  <input v-model="form.deploy_status" type="radio" value="failed" class="w-3 h-3" />
-                  <span class="text-red-400">Failed</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- DB Script Name (conditional) -->
-          <Input
-            v-if="form.database_script"
-            v-model="form.database_script_name"
-            label="Script Name"
-            placeholder="e.g., migration_001.sql"
-          />
-
-          <!-- Notes -->
-          <Textarea
-            v-model="form.notes"
-            label="Notes"
-            placeholder="Additional notes..."
-            :rows="2"
-          />
-
-          <!-- Deployed By (read-only from settings) -->
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-400">Deployed By:</span>
-            <span class="text-sm font-medium text-white">{{ form.deployed_by || settingsStore.settings?.default_deployed_by || 'Kannan' }}</span>
-            <span class="text-xs text-gray-500">(from Settings)</span>
-          </div>
-        </div>
-
-        <!-- Saved State Banner -->
-        <div v-if="savedDeployment" class="p-3 bg-green-900/30 border border-green-600 rounded-lg">
-          <div class="flex items-center gap-2 text-green-400 mb-2">
-            <CheckCircle class="w-5 h-5" />
-            <span class="font-medium">Deployment Saved Successfully!</span>
-          </div>
-          <p class="text-sm text-gray-300">Use the buttons below to copy deployment info, then click Clear to start a new deployment.</p>
-        </div>
-
-        <!-- Actions (Centered, Bigger) -->
-        <div class="flex gap-4 justify-center pt-3 border-t border-[#555555]">
-          <!-- Show Copy buttons after save OR when form is valid -->
+          <!-- Save Button -->
           <Button
-            type="button"
-            variant="secondary"
-            size="lg"
-            @click="handleCopyToJira"
-            :disabled="!isFormValid && !savedDeployment"
-          >
-            <Copy class="w-5 h-5" />
-            Copy to JIRA
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="lg"
-            @click="handleCopyToTeams"
-            :disabled="!isFormValid && !savedDeployment"
-          >
-            <Copy class="w-5 h-5" />
-            Copy to Teams
-          </Button>
-
-          <!-- Clear button - shown after save -->
-          <Button
-            v-if="savedDeployment"
-            type="button"
-            variant="danger"
-            size="lg"
-            @click="resetForm"
-          >
-            <Eraser class="w-5 h-5" />
-            Clear
-          </Button>
-
-          <!-- Save button - hidden after save -->
-          <Button
-            v-else
             variant="success"
-            size="lg"
             @click="handleSubmit"
-            :disabled="!isFormValid || isSubmitting"
+            :disabled="isSubmitting"
+            class="px-6"
           >
-            <Save class="w-5 h-5" />
-            {{ isSubmitting ? 'Saving...' : 'Save Deployment' }}
+            <Save class="w-4 h-4" />
+            {{ isSubmitting ? 'Saving...' : 'Save & Copy' }}
           </Button>
         </div>
-      </form>
-    </Card>
+
+        <!-- DB Script Name (conditional) -->
+        <div v-if="form.has_db_script" class="mt-3">
+          <input
+            v-model="form.database_script_name"
+            type="text"
+            placeholder="Script name, e.g., migration_001.sql"
+            class="w-full px-3 py-2 text-sm bg-[#404040] border border-[#555555] rounded-lg text-white focus:outline-none focus:border-[#4a9eff]"
+          />
+        </div>
+
+        <!-- Notes (expandable) -->
+        <div class="mt-3">
+          <button
+            @click="showNotes = !showNotes"
+            class="text-xs text-gray-400 hover:text-[#4a9eff]"
+          >
+            {{ showNotes ? '− Hide notes' : '+ Add notes' }}
+          </button>
+          <textarea
+            v-if="showNotes"
+            v-model="form.notes"
+            placeholder="Additional notes..."
+            rows="2"
+            class="w-full mt-2 px-3 py-2 text-sm bg-[#404040] border border-[#555555] rounded-lg text-white focus:outline-none focus:border-[#4a9eff] resize-none"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Success State -->
+      <div v-if="saveSuccess" class="mt-4 p-4 bg-green-900/30 border border-green-600 rounded-lg flex items-center gap-4">
+        <CheckCircle class="w-6 h-6 text-green-400" />
+        <div class="flex-1">
+          <div class="text-green-400 font-medium">Saved & Copied!</div>
+          <div class="text-gray-400 text-sm">Ready to paste in Teams</div>
+        </div>
+        <Button variant="secondary" @click="clearForNext">
+          <Plus class="w-4 h-4" />
+          Deploy Another
+        </Button>
+      </div>
+    </div>
+
+    <!-- Empty State - No selection -->
+    <div v-else class="flex-1 flex items-center justify-center">
+      <div class="text-center text-gray-400">
+        <Rocket class="w-12 h-12 mx-auto mb-3 opacity-30" />
+        <p class="text-lg">Select a project above to deploy</p>
+        <p class="text-sm mt-1">Or press <kbd class="px-1.5 py-0.5 bg-[#404040] rounded text-xs">Ctrl+R</kbd> to repeat last</p>
+      </div>
+    </div>
+
+    <!-- Keyboard shortcuts hint -->
+    <div class="flex-shrink-0 flex items-center justify-center gap-6 py-3 text-xs text-gray-500 border-t border-[#404040]">
+      <span><kbd class="px-1 py-0.5 bg-[#353535] rounded">Ctrl+S</kbd> Save</span>
+      <span><kbd class="px-1 py-0.5 bg-[#353535] rounded">Ctrl+R</kbd> Repeat Last</span>
+      <span><kbd class="px-1 py-0.5 bg-[#353535] rounded">Ctrl+L</kbd> Clear</span>
+      <span><kbd class="px-1 py-0.5 bg-[#353535] rounded">Enter</kbd> Quick Save</span>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import Card from '../components/ui/Card.vue'
-import Input from '../components/ui/Input.vue'
-import Select from '../components/ui/Select.vue'
-import Textarea from '../components/ui/Textarea.vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import Button from '../components/ui/Button.vue'
-import { useProjectsStore, type Component } from '../stores/projects'
+import { useProjectsStore } from '../stores/projects'
 import { useDeploymentsStore } from '../stores/deployments'
 import { useSettingsStore } from '../stores/settings'
-import { useLibraryStore } from '../stores/library'
 import { useClipboard, type DeploymentData } from '../composables/useClipboard'
 import { useToast } from '../composables/useToast'
-import { Clock, Copy, Save, Eraser, CheckCircle } from 'lucide-vue-next'
+import { Save, CheckCircle, Plus, Search, X, Rocket } from 'lucide-vue-next'
 
 const projectsStore = useProjectsStore()
 const deploymentsStore = useDeploymentsStore()
 const settingsStore = useSettingsStore()
-const libraryStore = useLibraryStore()
-const { copyToClipboard, formatForJira, formatForTeams } = useClipboard()
+const { copyToClipboard, formatForTeams } = useClipboard()
 const { success, error } = useToast()
 
-// Helper to get local datetime in format required by datetime-local input
-const getLocalDateTimeString = () => {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const hours = String(now.getHours()).padStart(2, '0')
-  const minutes = String(now.getMinutes()).padStart(2, '0')
-  return `${year}-${month}-${day}T${hours}:${minutes}`
-}
+// State
+const selectedValue = ref('')
+const patchNumber = ref('')
+const noPatchId = ref(false)
+const showAllProjects = ref(false)
+const searchQuery = ref('')
+const showNotes = ref(false)
+const isSubmitting = ref(false)
+const saveSuccess = ref(false)
 
 const form = ref({
-  project_id: '',
-  component_id: '',
-  jira_id: '',
-  timestamp: getLocalDateTimeString(),
-  database_script: false,
-  database_script_name: '',
   build_status: 'success' as 'success' | 'failed',
   deploy_status: 'success' as 'success' | 'failed',
+  has_db_script: false,
+  database_script_name: '',
   notes: '',
-  deployed_by: settingsStore.settings?.default_deployed_by || 'Kannan',
+  deployed_by: 'Kannan',
 })
 
-const autoFilled = ref({
-  component_name: '',
-  developer: '',
-  environment: '',
-  build_server: '',
-  deploy_server: '',
-  database_name: '',
-  vcs_url: '',
+// Track deployment counts per project/component for sorting favorites
+const deploymentCounts = computed(() => {
+  const counts: Record<string, number> = {}
+  for (const d of deploymentsStore.deployments) {
+    const key = `${d.project_id}-${d.component_id}`
+    counts[key] = (counts[key] || 0) + 1
+  }
+  return counts
 })
 
-const selectedComponent = ref<Component | null>(null)
-const isSubmitting = ref(false)
-const savedDeployment = ref<DeploymentData | null>(null)  // Stores last saved deployment for copy operations
+// Build favorites list (sorted by usage)
+const displayedFavorites = computed(() => {
+  return projectsStore.projectComponentOptions
+    .map(opt => ({
+      ...opt,
+      projectName: opt.project.name,
+      componentName: opt.component.name,
+      count: deploymentCounts.value[opt.value] || 0,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 7) // Top 7 + search button = 8 grid items
+})
 
-const projectNames = computed(() =>
-  projectsStore.projects.map(p => p.name || `Project ${p.id}`)
-)
-
-const componentNames = computed(() => {
-  if (!form.value.project_id) return []
-  const project = projectsStore.projects.find(
-    p => (p.name || `Project ${p.id}`) === form.value.project_id
+// Filtered options for search
+const filteredOptions = computed(() => {
+  if (!searchQuery.value.trim()) {
+    return projectsStore.projectComponentOptions
+  }
+  const query = searchQuery.value.toLowerCase()
+  return projectsStore.projectComponentOptions.filter(opt =>
+    opt.project.name?.toLowerCase().includes(query) ||
+    opt.component.name?.toLowerCase().includes(query)
   )
-  return project?.components.map(c => c.name) || []
 })
 
-const isFormValid = computed(() => {
-  return (
-    form.value.project_id &&
-    form.value.component_id &&
-    form.value.timestamp &&
-    form.value.deployed_by
-  )
+// Get selected option details
+const selectedOption = computed(() => {
+  if (!selectedValue.value) return null
+  return projectsStore.projectComponentOptions.find(o => o.value === selectedValue.value)
 })
 
-const handleProjectChange = () => {
-  form.value.component_id = ''
-  selectedComponent.value = null
-  Object.keys(autoFilled.value).forEach(key => {
-    autoFilled.value[key as keyof typeof autoFilled.value] = ''
-  })
+// Computed patch ID
+const fullPatchId = computed(() => {
+  if (noPatchId.value) return null
+  if (!patchNumber.value.trim()) return null
+  return `PAT-${patchNumber.value.trim()}`
+})
+
+// Handlers
+const selectProjectComponent = (value: string) => {
+  selectedValue.value = value
+  saveSuccess.value = false
+  // Reset form for new selection
+  patchNumber.value = ''
+  noPatchId.value = false
+  form.value.build_status = 'success'
+  form.value.deploy_status = 'success'
+  form.value.has_db_script = false
+  form.value.database_script_name = ''
+  form.value.notes = ''
+  showNotes.value = false
 }
 
-const handleComponentChange = () => {
-  const project = projectsStore.projects.find(
-    p => (p.name || `Project ${p.id}`) === form.value.project_id
-  )
-  const component = project?.components.find(c => c.name === form.value.component_id)
+const clearSelection = () => {
+  selectedValue.value = ''
+  saveSuccess.value = false
+}
 
-  if (component && project) {
-    selectedComponent.value = component
-    autoFilled.value = {
-      component_name: component.name,
-      developer: component.developer,
-      environment: project.environment,
-      build_server: project.build_server,
-      deploy_server: project.deploy_server,
-      database_name: project.database_name,
-      vcs_url: component.vcs_url,
-    }
+const toggleNoPatchId = () => {
+  noPatchId.value = !noPatchId.value
+  if (noPatchId.value) {
+    patchNumber.value = ''
   }
 }
 
-const setCurrentTimestamp = () => {
-  form.value.timestamp = getLocalDateTimeString()
+const clearForNext = () => {
+  patchNumber.value = ''
+  noPatchId.value = false
+  form.value.build_status = 'success'
+  form.value.deploy_status = 'success'
+  form.value.has_db_script = false
+  form.value.database_script_name = ''
+  form.value.notes = ''
+  showNotes.value = false
+  saveSuccess.value = false
 }
 
-// Build deployment data for copy operations
 const buildDeploymentData = (): DeploymentData => {
-  const project = projectsStore.projects.find(
-    p => (p.name || `Project ${p.id}`) === form.value.project_id
-  )
+  const opt = selectedOption.value
+  if (!opt) return {} as DeploymentData
+
   return {
-    patchId: form.value.jira_id || undefined,
-    project: form.value.project_id,
-    component: form.value.component_id,
-    environment: autoFilled.value.environment || project?.environment,
-    componentUrl: selectedComponent.value?.component_url,
-    buildServer: autoFilled.value.build_server || project?.build_server,
+    patchId: fullPatchId.value || undefined,
+    project: opt.project.name,
+    component: opt.component.name,
+    environment: opt.project.environment,
+    componentUrl: opt.component.component_url,
+    buildServer: opt.project.build_server,
     buildStatus: form.value.build_status,
-    vcsUrl: autoFilled.value.vcs_url || selectedComponent.value?.vcs_url,
-    deployServer: autoFilled.value.deploy_server || project?.deploy_server,
-    buildBackup: project?.backup_location,
-    databaseName: autoFilled.value.database_name || project?.database_name,
+    vcsUrl: opt.component.vcs_url,
+    deployServer: opt.project.deploy_server,
+    buildBackup: opt.project.backup_location,
+    databaseName: opt.project.database_name,
     deployStatus: form.value.deploy_status,
-    databaseScript: form.value.database_script ? form.value.database_script_name : undefined,
-    developer: autoFilled.value.developer || selectedComponent.value?.developer,
+    databaseScript: form.value.has_db_script ? form.value.database_script_name : undefined,
+    developer: opt.component.developer,
     deployedBy: form.value.deployed_by,
-    timestamp: form.value.timestamp,
+    timestamp: new Date().toISOString(),
     notes: form.value.notes || undefined,
   }
 }
 
-const handleCopyToJira = async () => {
-  if (!isFormValid.value && !savedDeployment.value) return
-
-  // Use saved data if available, otherwise build from current form
-  const data = savedDeployment.value || buildDeploymentData()
-
-  const text = formatForJira(data)
-  if (await copyToClipboard(text)) {
-    success('Copied to clipboard for JIRA!')
-  } else {
-    error('Failed to copy to clipboard')
-  }
-}
-
-const handleCopyToTeams = async () => {
-  if (!isFormValid.value && !savedDeployment.value) return
-
-  // Use saved data if available, otherwise build from current form
-  const data = savedDeployment.value || buildDeploymentData()
-
-  const text = formatForTeams(data)
-  if (await copyToClipboard(text)) {
-    success('Copied to clipboard for Teams!')
-  } else {
-    error('Failed to copy to clipboard')
-  }
-}
-
 const handleSubmit = async () => {
-  // Prevent double-clicks
-  if (isSubmitting.value) return
-  if (!isFormValid.value) return
-
-  if (!form.value.jira_id || form.value.jira_id.trim() === '') {
-    const confirmed = window.confirm(
-      'No Patch ID entered. Continue saving without a Patch ID?'
-    )
-    if (!confirmed) return
-  }
+  if (isSubmitting.value || !selectedOption.value) return
+  if (saveSuccess.value) return // Already saved
 
   isSubmitting.value = true
 
-  const project = projectsStore.projects.find(
-    p => (p.name || `Project ${p.id}`) === form.value.project_id
-  )
+  const opt = selectedOption.value
+  const now = new Date()
 
   const deployment = {
-    jira_id: form.value.jira_id?.trim() || null,
-    project_id: parseInt(project?.id?.toString() || '0'),
-    component_id: selectedComponent.value?.id ? parseInt(selectedComponent.value.id.toString()) : undefined,
-    timestamp: form.value.timestamp,
-    environment: autoFilled.value.environment,
-    vcs_url: autoFilled.value.vcs_url,
-    developer_name: autoFilled.value.developer,
-    build_server: autoFilled.value.build_server,
-    deploy_server: autoFilled.value.deploy_server,
-    database_name: autoFilled.value.database_name,
-    database_script: form.value.database_script ? form.value.database_script_name : undefined,
+    jira_id: fullPatchId.value,
+    project_id: opt.projectId,
+    component_id: opt.componentId,
+    timestamp: now.toISOString(),
+    environment: opt.project.environment,
+    vcs_url: opt.component.vcs_url,
+    developer_name: opt.component.developer,
+    build_server: opt.project.build_server,
+    deploy_server: opt.project.deploy_server,
+    database_name: opt.project.database_name,
+    database_script: form.value.has_db_script ? form.value.database_script_name : undefined,
     build_status: form.value.build_status,
     deploy_status: form.value.deploy_status,
     notes: form.value.notes,
@@ -425,51 +425,75 @@ const handleSubmit = async () => {
   try {
     const result = await deploymentsStore.createDeployment(deployment)
     if (result) {
-      success('Deployment saved! Use Copy buttons or Clear to start new.')
-      // Store saved data for copy operations
-      savedDeployment.value = buildDeploymentData()
-      // Don't reset form - let user copy first
+      // Store for "Repeat Last"
+      deploymentsStore.setLastDeployment(opt.projectId, opt.componentId)
+
+      // Auto-copy to Teams format
+      const data = buildDeploymentData()
+      const text = formatForTeams(data)
+      await copyToClipboard(text)
+
+      saveSuccess.value = true
+      success('Saved & copied to clipboard!')
     } else {
       error('Failed to save deployment')
-      savedDeployment.value = null
     }
+  } catch (err) {
+    error('Failed to save deployment')
   } finally {
     isSubmitting.value = false
   }
 }
 
-const resetForm = () => {
-  form.value = {
-    project_id: '',
-    component_id: '',
-    jira_id: '',
-    timestamp: getLocalDateTimeString(),
-    database_script: false,
-    database_script_name: '',
-    build_status: 'success',
-    deploy_status: 'success',
-    notes: '',
-    deployed_by: settingsStore.settings?.default_deployed_by || 'Kannan',
+const repeatLast = () => {
+  const last = deploymentsStore.lastDeployment
+  if (last) {
+    const option = projectsStore.projectComponentOptions.find(
+      o => o.projectId === last.project_id && o.componentId === last.component_id
+    )
+    if (option) {
+      selectProjectComponent(option.value)
+      success('Loaded last deployment')
+    }
   }
-  selectedComponent.value = null
-  savedDeployment.value = null  // Clear saved state
-  Object.keys(autoFilled.value).forEach(key => {
-    autoFilled.value[key as keyof typeof autoFilled.value] = ''
-  })
 }
 
-watch(() => form.value.component_id, () => {
-  handleComponentChange()
-})
+// Keyboard shortcuts
+const handleKeydown = (e: KeyboardEvent) => {
+  if (e.ctrlKey || e.metaKey) {
+    switch (e.key.toLowerCase()) {
+      case 's':
+        e.preventDefault()
+        if (selectedOption.value && !saveSuccess.value) {
+          handleSubmit()
+        }
+        break
+      case 'r':
+        e.preventDefault()
+        repeatLast()
+        break
+      case 'l':
+        e.preventDefault()
+        clearSelection()
+        break
+    }
+  }
+}
 
 onMounted(async () => {
+  window.addEventListener('keydown', handleKeydown)
+
   if (projectsStore.projects.length === 0) {
     await projectsStore.fetchProjects()
   }
-  if (libraryStore.presets.developers.length === 0) {
-    await libraryStore.fetchPresets()
+  if (deploymentsStore.deployments.length === 0) {
+    await deploymentsStore.fetchDeployments()
   }
   await settingsStore.fetchSettings()
   form.value.deployed_by = settingsStore.settings?.default_deployed_by || 'Kannan'
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
 })
 </script>

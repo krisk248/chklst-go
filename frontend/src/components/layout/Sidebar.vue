@@ -39,7 +39,7 @@
 <script setup lang="ts">
 import { RouterLink, useRoute } from 'vue-router'
 import {
-  Home,
+  Rocket,
   Folder,
   BookOpen,
   Clock,
@@ -53,7 +53,7 @@ import {
 useRoute()
 
 const menuItems = [
-  { path: '/deployment', label: 'Deployment', icon: Home },
+  { path: '/deployment', label: 'Quick Deploy', icon: Rocket },
   { path: '/projects', label: 'Projects', icon: Folder },
   { path: '/library', label: 'Library', icon: BookOpen },
   { path: '/history', label: 'History', icon: Clock },

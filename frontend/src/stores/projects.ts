@@ -1,11 +1,6 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useApi } from '../composables/useApi'
-
-export interface WebSocketMessage {
-  type: 'deployment_created' | 'deployment_updated' | 'project_updated' | 'library_updated'
-  data: any
-}
 
 export interface Component {
   id?: number
@@ -188,31 +183,29 @@ export const useProjectsStore = defineStore('projects', () => {
     return project?.components || []
   }
 
-  // WebSocket listener setup
-  const setupWebSocketListener = () => {
-    if (typeof window !== 'undefined') {
-      window.addEventListener('ws-message', (event: Event) => {
-        const customEvent = event as CustomEvent
-        const message: WebSocketMessage = customEvent.detail
-
-        if (message.type === 'project_updated') {
-          // Update existing project
-          const index = projects.value.findIndex(p => p.id === message.data.id)
-          if (index !== -1) {
-            projects.value[index] = message.data
-          }
-        }
-      })
+  // Combined Project+Component options for single dropdown
+  const projectComponentOptions = computed(() => {
+    const options: { value: string; label: string; projectId: number; componentId: number; project: Project; component: Component }[] = []
+    for (const project of projects.value) {
+      for (const component of project.components || []) {
+        options.push({
+          value: `${project.id}-${component.id}`,
+          label: `${project.name} > ${component.name}`,
+          projectId: project.id!,
+          componentId: component.id!,
+          project,
+          component,
+        })
+      }
     }
-  }
-
-  // Initialize WebSocket listener when store is created
-  setupWebSocketListener()
+    return options
+  })
 
   return {
     projects,
     isLoading,
     error,
+    projectComponentOptions,
     fetchProjects,
     createProject,
     updateProject,
@@ -222,6 +215,5 @@ export const useProjectsStore = defineStore('projects', () => {
     deleteComponent,
     getProjectByName,
     getComponentsByProject,
-    setupWebSocketListener,
   }
 })

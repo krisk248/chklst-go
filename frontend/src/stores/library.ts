@@ -2,11 +2,6 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../composables/useApi'
 
-export interface WebSocketMessage {
-  type: 'deployment_created' | 'deployment_updated' | 'project_updated' | 'library_updated'
-  data: any
-}
-
 export interface LibraryPresets {
   id?: number
   developers: string[]
@@ -108,24 +103,6 @@ export const useLibraryStore = defineStore('library', () => {
     }
   }
 
-  // WebSocket listener setup
-  const setupWebSocketListener = () => {
-    if (typeof window !== 'undefined') {
-      window.addEventListener('ws-message', (event: Event) => {
-        const customEvent = event as CustomEvent
-        const message: WebSocketMessage = customEvent.detail
-
-        if (message.type === 'library_updated') {
-          // Refetch library presets when library is updated
-          fetchPresets()
-        }
-      })
-    }
-  }
-
-  // Initialize WebSocket listener when store is created
-  setupWebSocketListener()
-
   return {
     presets,
     isLoading,
@@ -140,6 +117,5 @@ export const useLibraryStore = defineStore('library', () => {
     addEnvironment,
     removeEnvironment,
     savePresets,
-    setupWebSocketListener,
   }
 })

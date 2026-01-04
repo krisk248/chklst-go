@@ -18,7 +18,7 @@ const routes: RouteRecordRaw[] = [
     path: '/deployment',
     name: 'Deployment',
     component: DeploymentView,
-    meta: { title: 'Deployment' },
+    meta: { title: 'Quick Deploy' },
   },
   {
     path: '/projects',

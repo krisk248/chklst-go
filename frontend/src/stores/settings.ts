@@ -5,6 +5,8 @@ import { useApi } from '../composables/useApi'
 export interface AppSettings {
   default_deployed_by: string
   excel_export_path: string
+  // UX settings (local storage)
+  auto_clear_after_save: boolean
 }
 
 export const useSettingsStore = defineStore('settings', () => {

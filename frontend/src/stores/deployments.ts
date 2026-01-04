@@ -1,11 +1,6 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useApi } from '../composables/useApi'
-
-export interface WebSocketMessage {
-  type: 'deployment_created' | 'deployment_updated' | 'project_updated' | 'library_updated'
-  data: any
-}
 
 export interface Deployment {
   id?: number
@@ -119,37 +114,18 @@ export const useDeploymentsStore = defineStore('deployments', () => {
     })
   }
 
-  // WebSocket listener setup
-  const setupWebSocketListener = () => {
-    if (typeof window !== 'undefined') {
-      window.addEventListener('ws-message', (event: Event) => {
-        const customEvent = event as CustomEvent
-        const message: WebSocketMessage = customEvent.detail
+  // Store last deployment for "Repeat Last" feature
+  const lastDeployment = ref<{ project_id: number; component_id: number } | null>(null)
 
-        if (message.type === 'deployment_created') {
-          // Add new deployment to the list if not already present
-          const exists = deployments.value.some(d => d.id === message.data.id)
-          if (!exists) {
-            deployments.value.unshift(message.data)
-          }
-        } else if (message.type === 'deployment_updated') {
-          // Update existing deployment
-          const index = deployments.value.findIndex(d => d.id === message.data.id)
-          if (index !== -1) {
-            deployments.value[index] = message.data
-          }
-        }
-      })
-    }
+  const setLastDeployment = (projectId: number, componentId: number) => {
+    lastDeployment.value = { project_id: projectId, component_id: componentId }
   }
-
-  // Initialize WebSocket listener when store is created
-  setupWebSocketListener()
 
   return {
     deployments,
     isLoading,
     error,
+    lastDeployment,
     fetchDeployments,
     createDeployment,
     updateDeployment,
@@ -157,6 +133,6 @@ export const useDeploymentsStore = defineStore('deployments', () => {
     recentDeployments,
     getDeploymentsByProject,
     getDeploymentsByMonth,
-    setupWebSocketListener,
+    setLastDeployment,
   }
 })

@@ -57,43 +57,53 @@
       </div>
     </div>
 
-    <!-- Filter Tabs and Project Dropdown -->
-    <div class="flex flex-wrap items-center gap-2">
-      <Button
-        v-for="tab in filterTabs"
-        :key="tab.value"
-        :variant="activeFilters.includes(tab.value) ? 'primary' : 'secondary'"
-        size="sm"
-        @click="toggleFilter(tab.value)"
-      >
-        {{ tab.label }}
-      </Button>
+    <!-- Search and Filters -->
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- Search Input -->
+      <div class="relative flex-1 max-w-xs">
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search Patch ID, Project..."
+          class="w-full pl-9 pr-3 py-1.5 text-sm bg-[#2a2a2a] border border-gray-600 rounded focus:outline-none focus:border-[#4a9eff] text-white placeholder-gray-500"
+        />
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="flex items-center gap-1">
+        <Button
+          v-for="tab in filterTabs"
+          :key="tab.value"
+          :variant="activeFilters.includes(tab.value) ? 'primary' : 'secondary'"
+          size="sm"
+          @click="toggleFilter(tab.value)"
+        >
+          {{ tab.label }}
+        </Button>
+      </div>
 
       <!-- Project Dropdown -->
-      <div class="relative ml-2">
-        <select
-          v-model="selectedProject"
-          class="bg-[#2a2a2a] border border-gray-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#4a9eff]"
-        >
-          <option value="">All Projects</option>
-          <option v-for="project in projectsStore.projects" :key="project.id" :value="project.id">
-            {{ project.name }}
-          </option>
-        </select>
-      </div>
+      <select
+        v-model="selectedProject"
+        class="bg-[#2a2a2a] border border-gray-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#4a9eff]"
+      >
+        <option value="">All Projects</option>
+        <option v-for="project in projectsStore.projects" :key="project.id" :value="project.id">
+          {{ project.name }}
+        </option>
+      </select>
 
       <!-- Sort Options -->
-      <div class="relative ml-2">
-        <select
-          v-model="sortOption"
-          class="bg-[#2a2a2a] border border-gray-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#4a9eff]"
-        >
-          <option value="date-desc">Newest First</option>
-          <option value="date-asc">Oldest First</option>
-          <option value="null-first">NULL Patch IDs First</option>
-          <option value="project">By Project</option>
-        </select>
-      </div>
+      <select
+        v-model="sortOption"
+        class="bg-[#2a2a2a] border border-gray-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#4a9eff]"
+      >
+        <option value="date-desc">Newest First</option>
+        <option value="date-asc">Oldest First</option>
+        <option value="null-first">NULL Patch IDs First</option>
+        <option value="project">By Project</option>
+      </select>
     </div>
 
     <!-- Deployment History Table -->
@@ -247,13 +257,9 @@
         </div>
 
         <div class="flex gap-2 mt-4 justify-end">
-          <Button variant="secondary" size="sm" @click="handleCopyToJira(viewModal)">
+          <Button variant="primary" size="sm" @click="handleCopyToTeams(viewModal)">
             <Copy class="w-4 h-4" />
-            Copy to JIRA
-          </Button>
-          <Button variant="secondary" size="sm" @click="handleCopyToTeams(viewModal)">
-            <Copy class="w-4 h-4" />
-            Copy to Teams
+            Copy to Clipboard
           </Button>
         </div>
       </Card>
@@ -397,12 +403,12 @@ import { useProjectsStore } from '../stores/projects'
 import { useSettingsStore } from '../stores/settings'
 import { useClipboard, type DeploymentData } from '../composables/useClipboard'
 import { useToast } from '../composables/useToast'
-import { RefreshCw, Copy, X, Save, Trash2, AlertTriangle } from 'lucide-vue-next'
+import { RefreshCw, Copy, X, Save, Trash2, AlertTriangle, Search } from 'lucide-vue-next'
 
 const deploymentsStore = useDeploymentsStore()
 const projectsStore = useProjectsStore()
 const settingsStore = useSettingsStore()
-const { copyToClipboard, formatForJira, formatForTeams } = useClipboard()
+const { copyToClipboard, formatForTeams } = useClipboard()
 const { success, error } = useToast()
 
 // Modals
@@ -427,6 +433,7 @@ const isDeleting = ref(false)
 const activeFilters = ref<string[]>(['all'])
 const selectedProject = ref<number | ''>('')
 const sortOption = ref('date-desc')
+const searchQuery = ref('')
 
 const filterTabs = [
   { label: 'All', value: 'all' },
@@ -484,6 +491,17 @@ const successCount = computed(() => {
 const filteredDeployments = computed(() => {
   const now = new Date()
   let filtered = [...deploymentsStore.deployments]
+
+  // Apply search filter
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase().trim()
+    filtered = filtered.filter(d => {
+      const patchId = (d.jira_id || '').toLowerCase()
+      const projectName = getProjectName(d.project_id).toLowerCase()
+      const componentName = getComponentName(d.component_id).toLowerCase()
+      return patchId.includes(query) || projectName.includes(query) || componentName.includes(query)
+    })
+  }
 
   // Apply time filters
   if (!activeFilters.value.includes('all')) {
@@ -650,17 +668,6 @@ const buildDeploymentDataFromHistory = (deployment: Deployment): DeploymentData 
     deployedBy: deployment.deployed_by,
     timestamp: deployment.timestamp,
     notes: deployment.notes || undefined,
-  }
-}
-
-const handleCopyToJira = async (deployment: Deployment) => {
-  const data = buildDeploymentDataFromHistory(deployment)
-
-  const text = formatForJira(data)
-  if (await copyToClipboard(text)) {
-    success('Copied to clipboard for JIRA!')
-  } else {
-    error('Failed to copy')
   }
 }
 
