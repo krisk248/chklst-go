@@ -3,6 +3,7 @@ chklst
 chklst.exe
 chklst-mac
 chklst-linux
+chklst.backup.*
 *.exe
 *.dll
 *.so
@@ -68,6 +69,9 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Serena AI memories (local only)
+.serena/
 
 # Frontend build
 frontend/dist/

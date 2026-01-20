@@ -13,6 +13,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const settings = ref<AppSettings>({
     default_deployed_by: 'Kannan',
     excel_export_path: '/reports',
+    auto_clear_after_save: false,
   })
   const isLoading = ref(false)
   const error = ref<string | null>(null)
@@ -49,21 +50,11 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
-  const setDefaultDeployedBy = (name: string) => {
-    settings.value.default_deployed_by = name
-  }
-
-  const setExcelExportPath = (path: string) => {
-    settings.value.excel_export_path = path
-  }
-
   return {
     settings,
     isLoading,
     error,
     fetchSettings,
     saveSettings,
-    setDefaultDeployedBy,
-    setExcelExportPath,
   }
 })

@@ -183,6 +183,22 @@ export const useProjectsStore = defineStore('projects', () => {
     return project?.components || []
   }
 
+  // Helper to get project name by ID (used in History, Reports, Export, Analysis views)
+  const getProjectName = (projectId: number): string => {
+    const project = projects.value.find(p => p.id === projectId)
+    return project?.name || `Project ${projectId}`
+  }
+
+  // Helper to get component name by ID (searches across all projects)
+  const getComponentName = (componentId?: number): string => {
+    if (!componentId) return 'N/A'
+    for (const project of projects.value) {
+      const component = project.components?.find(c => c.id === componentId)
+      if (component) return component.name
+    }
+    return `Component ${componentId}`
+  }
+
   // Combined Project+Component options for single dropdown
   const projectComponentOptions = computed(() => {
     const options: { value: string; label: string; projectId: number; componentId: number; project: Project; component: Component }[] = []
@@ -215,5 +231,7 @@ export const useProjectsStore = defineStore('projects', () => {
     deleteComponent,
     getProjectByName,
     getComponentsByProject,
+    getProjectName,
+    getComponentName,
   }
 })

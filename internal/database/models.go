@@ -119,3 +119,18 @@ type Library struct {
 func (Library) TableName() string {
 	return "library"
 }
+
+// Settings stores application settings (singleton)
+type Settings struct {
+	ID                 uint      `gorm:"primaryKey" json:"id"`
+	DefaultDeployedBy  string    `json:"default_deployed_by"`
+	ExcelExportPath    string    `json:"excel_export_path"`
+	AutoClearAfterSave bool      `json:"auto_clear_after_save"`
+	CreatedAt          time.Time `json:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at"`
+}
+
+// TableName overrides the table name for Settings
+func (Settings) TableName() string {
+	return "settings"
+}

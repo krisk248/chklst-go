@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useSlots } from 'vue'
 
 interface Column {
   key: string
@@ -64,8 +64,9 @@ defineSlots<{
   actions(props: { row: Record<string, any> }): any
 }>()
 
+const slots = useSlots()
+
 const hasActions = computed(() => {
-  // Check if actions slot is provided
-  return true
+  return !!slots.actions
 })
 </script>

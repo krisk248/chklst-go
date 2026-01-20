@@ -166,19 +166,9 @@ const selectedMonthNumber = computed(() => {
   return monthOptions.indexOf(selectedMonth.value) + 1
 })
 
-const getProjectName = (projectId: number) => {
-  const project = projectsStore.projects.find(p => p.id === projectId)
-  return project?.name || `Project ${projectId}`
-}
-
-const getComponentName = (componentId?: number) => {
-  if (!componentId) return 'N/A'
-  for (const project of projectsStore.projects) {
-    const component = project.components.find(c => c.id === componentId)
-    if (component) return component.name
-  }
-  return `Component ${componentId}`
-}
+// Use centralized helpers from store
+const getProjectName = projectsStore.getProjectName
+const getComponentName = projectsStore.getComponentName
 
 const columns = [
   { key: 'jira_id', label: 'Patch ID' },

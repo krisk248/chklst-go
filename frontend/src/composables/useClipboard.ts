@@ -53,33 +53,6 @@ export function useClipboard() {
     return `${day}-${month}-${year} ${hours}:${minutes}${ampm}`
   }
 
-  const formatForJira = (data: DeploymentData): string => {
-    const lines: string[] = []
-    const buildIcon = data.buildStatus === 'success' ? '(/)(/)' : '(x)'
-    const deployIcon = data.deployStatus === 'success' ? '(/)(/)' : '(x)'
-
-    lines.push(`h3. 🎫 PATCH: ${data.patchId || 'N/A'} | ${data.project} - Deployment Complete`)
-    lines.push('')
-    lines.push(`||Field||Value||`)
-    lines.push(`|*Project*|${data.project} - ${data.component}|`)
-    if (data.environment) lines.push(`|*Environment*|${data.environment}|`)
-    if (data.componentUrl) lines.push(`|*URL*|${data.componentUrl}|`)
-    if (data.buildServer) lines.push(`|*Build Server*|${data.buildServer}|`)
-    lines.push(`|*Build*|${buildIcon} ${data.buildStatus?.toUpperCase()}|`)
-    if (data.vcsUrl) lines.push(`|*Git URL*|${data.vcsUrl}|`)
-    if (data.deployServer) lines.push(`|*Deploy Server*|${data.deployServer}|`)
-    if (data.buildBackup) lines.push(`|*Build Backup*|${data.buildBackup}|`)
-    if (data.databaseName) lines.push(`|*Database*|${data.databaseName}|`)
-    if (data.databaseScript) lines.push(`|*DB Script*|${data.databaseScript}|`)
-    lines.push(`|*Deployment*|${deployIcon} ${data.deployStatus?.toUpperCase()}|`)
-    if (data.developer) lines.push(`|*Developer*|${data.developer}|`)
-    lines.push(`|*Deployed By*|${data.deployedBy}|`)
-    lines.push(`|*Timestamp*|${formatTimestamp(data.timestamp || '')}|`)
-    if (data.notes) lines.push(`|*Notes*|${data.notes}|`)
-
-    return lines.join('\n')
-  }
-
   const formatForTeams = (data: DeploymentData): string => {
     const lines: string[] = []
     const buildIcon = data.buildStatus === 'success' ? '✅ PASS' : '❌ FAIL'
@@ -109,7 +82,6 @@ export function useClipboard() {
   return {
     isCopied,
     copyToClipboard,
-    formatForJira,
     formatForTeams,
   }
 }

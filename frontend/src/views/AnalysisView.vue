@@ -256,7 +256,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Card from '../components/ui/Card.vue'
 import Select from '../components/ui/Select.vue'
 import { useDeploymentsStore } from '../stores/deployments'
@@ -324,10 +324,8 @@ const activeProjects = computed(() => {
   return projs.size
 })
 
-const getProjectName = (projectId: number) => {
-  const project = projectsStore.projects.find(p => p.id === projectId)
-  return project?.name || `Project ${projectId}`
-}
+// Use centralized helper from store
+const getProjectName = projectsStore.getProjectName
 
 // Top Deployers
 const topDeployers = computed(() => {

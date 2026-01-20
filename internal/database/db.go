@@ -54,6 +54,7 @@ func AutoMigrate() error {
 		&Component{},
 		&Deployment{},
 		&Library{},
+		&Settings{},
 	)
 
 	if err != nil {

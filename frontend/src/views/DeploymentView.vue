@@ -249,7 +249,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Button from '../components/ui/Button.vue'
 import { useProjectsStore } from '../stores/projects'
 import { useDeploymentsStore } from '../stores/deployments'
