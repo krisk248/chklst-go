@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -30,6 +31,13 @@ var (
 //   - All actions are idempotent off DailySummary status fields, and generation is
 //     serialized by genMu (shared with the manual Generate endpoint).
 func StartScheduler() {
+	// DISABLE_SCHEDULER=true turns off auto-generate/auto-send entirely — used by the
+	// dev instance (port 9000) so it never emails the team while we build against
+	// a copy of real data.
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("DISABLE_SCHEDULER")), "true") {
+		log.Println("🕒 Parson scheduler DISABLED (DISABLE_SCHEDULER=true)")
+		return
+	}
 	go func() {
 		ticker := time.NewTicker(1 * time.Minute)
 		defer ticker.Stop()

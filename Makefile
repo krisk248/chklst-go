@@ -87,5 +87,25 @@ ps: ## Show container status
 docker-build: $(DOCKER_CFG)/config.json ## Build the image only
 	@$(COMPOSE) build
 
+# --- Parallel DEV instance on :9000 (in-progress branch, copy of real data) ---
+DEV_COMPOSE := DOCKER_CONFIG=$(DOCKER_CFG) docker compose -f docker-compose.dev.yml
+
+dev-seed: $(DOCKER_CFG)/config.json ## Copy the live :8000 DB into the dev volume (snapshot)
+	@$(DEV_COMPOSE) up -d --build >/dev/null 2>&1 || true
+	@$(DEV_COMPOSE) stop >/dev/null 2>&1 || true
+	@docker run --rm -v chklst-go_chklst-data:/src -v chklst-go_chklst-dev-data:/dst alpine \
+		sh -c "cp -f /src/chklst.db /dst/chklst.db 2>/dev/null && echo seeded || echo 'no source DB yet'"
+
+dev-up: $(DOCKER_CFG)/config.json ## Rebuild + start the dev instance on :9000
+	@echo "🧪 Starting dev (branch) on :9000 ..."
+	@$(DEV_COMPOSE) up -d --build
+	@echo "✅ dev at http://localhost:9000 (scheduler disabled, isolated data)"
+
+dev-down: ## Stop the dev instance (keeps dev data volume)
+	@$(DEV_COMPOSE) down
+
+dev-logs: ## Follow dev instance logs
+	@$(DEV_COMPOSE) logs -f
+
 # Default target
 .DEFAULT_GOAL := help
