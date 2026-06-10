@@ -319,6 +319,27 @@
             </div>
           </Card>
 
+          <!-- Git Insights Section -->
+          <Card v-if="activeSection === 'github'" title="Git Insights (GitHub)">
+            <div class="space-y-4">
+              <p class="text-sm text-gray-400">
+                Connect GitHub to analyze commit activity & CI/CD cadence. Use a token with
+                read access to the repos (the token is encrypted at rest).
+              </p>
+              <Input v-model="settingsForm.github_token" label="GitHub Token (PAT)" type="password" placeholder="ghp_…" />
+              <Input v-model="settingsForm.github_owner" label="Owner (user or org)" placeholder="your-org" />
+              <Input v-model="settingsForm.github_repos" label="Repos (comma-separated, blank = all owner repos)" placeholder="repo-a, repo-b" />
+              <div class="pt-2">
+                <Button type="button" variant="secondary" @click="testGitHub" :disabled="testingGit || !settingsForm.github_owner">
+                  <RefreshCw v-if="testingGit" class="w-4 h-4 animate-spin" />
+                  <Zap v-else class="w-4 h-4" />
+                  {{ testingGit ? 'Testing…' : 'Test GitHub' }}
+                </Button>
+                <span v-if="gitTestMsg" class="ml-2 text-sm" :class="gitTestOk ? 'text-green-400' : 'text-red-400'">{{ gitTestMsg }}</span>
+              </div>
+            </div>
+          </Card>
+
           <!-- Schedule Section -->
           <Card v-if="activeSection === 'schedule'" title="Daily Report Schedule">
             <div class="space-y-4">
@@ -498,6 +519,23 @@ const testingJira = ref(false)
 const testingWebhook = ref(false)
 const testingAI = ref(false)
 const testingEmail = ref(false)
+const testingGit = ref(false)
+const gitTestMsg = ref('')
+const gitTestOk = ref(false)
+
+const testGitHub = async () => {
+  await handleSaveSettings()
+  testingGit.value = true
+  gitTestMsg.value = ''
+  try {
+    const { useGitInsightsStore } = await import('../stores/gitInsights')
+    const res = await useGitInsightsStore().test()
+    gitTestOk.value = !!res.ok
+    gitTestMsg.value = res.ok ? `Connected — ${res.repos_found} repos found` : (res.error || 'Failed')
+  } finally {
+    testingGit.value = false
+  }
+}
 const aiTestResult = ref<{ ok: boolean; version?: string; model?: string; sample?: string; stage?: string; error?: string } | null>(null)
 
 interface AIModel { name: string; size_gb?: number; size_hint?: string; note?: string }
@@ -551,6 +589,7 @@ const settingsSections = [
   { id: 'webhooks', label: 'Webhooks' },
   { id: 'ai', label: 'Parson (AI)' },
   { id: 'email', label: 'Email (SMTP)' },
+  { id: 'github', label: 'Git Insights' },
   { id: 'schedule', label: 'Schedule' },
   { id: 'display', label: 'Display' },
   { id: 'advanced', label: 'Advanced' },
@@ -580,6 +619,9 @@ const settingsForm = ref({
   smtp_cc: '',
   smtp_security: 'tls',
   smtp_test_to: '',
+  github_token: '',
+  github_owner: '',
+  github_repos: '',
   summary_schedule_enabled: false,
   summary_generate_time: '18:30',
   summary_send_time: '20:00',
@@ -701,6 +743,9 @@ onMounted(async () => {
     smtp_cc: s.smtp_cc || '',
     smtp_security: s.smtp_security || 'tls',
     smtp_test_to: s.smtp_test_to || '',
+    github_token: s.github_token || '',
+    github_owner: s.github_owner || '',
+    github_repos: s.github_repos || '',
     summary_schedule_enabled: s.summary_schedule_enabled || false,
     summary_generate_time: s.summary_generate_time || '18:30',
     summary_send_time: s.summary_send_time || '20:00',

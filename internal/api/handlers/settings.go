@@ -157,6 +157,11 @@ func UpdateSettings(c fiber.Ctx) error {
 	settings.ParsonSystemPrompt = req.ParsonSystemPrompt
 	settings.ParsonTemperature = req.ParsonTemperature
 
+	// Git Insights (GitHub) fields
+	settings.GitHubToken = req.GitHubToken
+	settings.GitHubOwner = req.GitHubOwner
+	settings.GitHubRepos = req.GitHubRepos
+
 	// Email (SMTP) fields
 	settings.SMTPHost = req.SMTPHost
 	settings.SMTPPort = req.SMTPPort
