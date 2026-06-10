@@ -2,10 +2,10 @@
   <button
     :type="type"
     :class="[
-      'px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2',
+      'px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
       variantClasses,
       sizeClasses,
-      disabled && 'opacity-50 cursor-not-allowed',
+      disabled && 'opacity-60 cursor-not-allowed',
     ]"
     :disabled="disabled"
   >
@@ -33,15 +33,15 @@ const props = withDefaults(defineProps<Props>(), {
 const variantClasses = computed(() => {
   switch (props.variant) {
     case 'secondary':
-      return 'bg-[#404040] text-white hover:bg-[#555555]'
+      return 'bg-surface-light text-white hover:bg-surface-border'
     case 'danger':
       return 'bg-red-600 text-white hover:bg-red-700'
     case 'success':
       return 'bg-green-600 text-white hover:bg-green-700'
     case 'ghost':
-      return 'bg-transparent text-white border border-[#555555] hover:bg-[#404040]'
+      return 'bg-transparent text-white border border-surface-border hover:bg-surface-light'
     default:
-      return 'bg-[#4a9eff] text-white hover:bg-[#3a8eef]'
+      return 'bg-accent text-white hover:bg-[#3a8eef]'
   }
 })
 

@@ -23,10 +23,10 @@
         >
           <div
             v-if="isOpen"
-            class="bg-[#2b2b2b] rounded-lg border border-[#555555] max-w-md w-full shadow-xl"
+            class="bg-surface-deeper rounded-lg border border-surface-border max-w-md w-full shadow-xl"
             @click.stop
           >
-            <div class="flex items-center justify-between border-b border-[#555555] p-6">
+            <div class="flex items-center justify-between border-b border-surface-border p-6">
               <h2 class="text-xl font-bold text-white">{{ title }}</h2>
               <button
                 @click="emit('close')"
@@ -38,7 +38,7 @@
             <div class="p-6">
               <slot />
             </div>
-            <div v-if="$slots.footer" class="border-t border-[#555555] p-6 flex gap-3 justify-end">
+            <div v-if="$slots.footer" class="border-t border-surface-border p-6 flex gap-3 justify-end">
               <slot name="footer" />
             </div>
           </div>

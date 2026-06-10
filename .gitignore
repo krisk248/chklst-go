@@ -1,5 +1,14 @@
+# Secrets & local config — NEVER commit these
+.env
+.env.local
+.env.*.local
+token.txt
+subfinder.txt
+!.env.example
+
 # Binaries
 chklst
+chklst-dev
 chklst.exe
 chklst-mac
 chklst-linux
@@ -30,30 +39,10 @@ go.work
 backups/
 *.backup
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
+# Build output (keep the build/*.sh scripts; ignore generated artifacts)
+build/output/
+build/pyinstaller-work/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-venv/
-ENV/
 
 # IDEs
 .vscode/

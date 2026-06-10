@@ -23,12 +23,29 @@ func ListDeployments(c fiber.Ctx) error {
 		if year := c.Query("year"); year != "" {
 			monthInt, _ := strconv.Atoi(month)
 			yearInt, _ := strconv.Atoi(year)
-			
+
 			startDate := time.Date(yearInt, time.Month(monthInt), 1, 0, 0, 0, 0, time.UTC)
 			endDate := startDate.AddDate(0, 1, 0)
-			
+
 			query = query.Where("timestamp >= ? AND timestamp < ?", startDate, endDate)
 		}
+	}
+
+	// Optional pagination: ?limit=N (cap 1000) & ?offset=N. Without limit the full
+	// list is returned (existing views rely on that); paginate as data grows.
+	if limitStr := c.Query("limit"); limitStr != "" {
+		limit, err := strconv.Atoi(limitStr)
+		if err != nil || limit < 1 {
+			return c.Status(400).JSON(fiber.Map{"error": "Invalid limit"})
+		}
+		if limit > 1000 {
+			limit = 1000
+		}
+		offset, _ := strconv.Atoi(c.Query("offset"))
+		if offset < 0 {
+			offset = 0
+		}
+		query = query.Order("timestamp desc").Limit(limit).Offset(offset)
 	}
 
 	var deployments []database.Deployment
@@ -115,6 +132,27 @@ func parseTimestamp(ts string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("invalid timestamp format: %s", ts)
 }
 
+// validateDeploymentRefs ensures the referenced project exists and, when a component
+// is given, that it exists and belongs to that project.
+func validateDeploymentRefs(projectID uint, componentID *uint) error {
+	if projectID == 0 {
+		return fmt.Errorf("project_id is required")
+	}
+	var count int64
+	database.DB.Model(&database.Project{}).Where("id = ?", projectID).Count(&count)
+	if count == 0 {
+		return fmt.Errorf("project %d does not exist", projectID)
+	}
+	if componentID != nil && *componentID != 0 {
+		database.DB.Model(&database.Component{}).
+			Where("id = ? AND project_id = ?", *componentID, projectID).Count(&count)
+		if count == 0 {
+			return fmt.Errorf("component %d does not exist in project %d", *componentID, projectID)
+		}
+	}
+	return nil
+}
+
 // CreateDeployment creates a new deployment
 func CreateDeployment(c fiber.Ctx) error {
 	var req DeploymentRequest
@@ -131,6 +169,11 @@ func CreateDeployment(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{
 			"error": fmt.Sprintf("Invalid timestamp: %s", err.Error()),
 		})
+	}
+
+	// Validate references so analytics never sees orphaned rows.
+	if err := validateDeploymentRefs(req.ProjectID, req.ComponentID); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	// Create deployment from request
@@ -186,6 +229,10 @@ func UpdateDeployment(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{
 			"error": "Invalid request body",
 		})
+	}
+
+	if err := validateDeploymentRefs(deployment.ProjectID, deployment.ComponentID); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	if err := database.DB.Save(&deployment).Error; err != nil {

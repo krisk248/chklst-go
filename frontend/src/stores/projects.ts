@@ -92,6 +92,26 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
+  const duplicateProject = async (id: number, newName?: string): Promise<Project | null> => {
+    isLoading.value = true
+    error.value = null
+    try {
+      const response = await post<Project>(`/projects/${id}/duplicate`, newName ? { new_name: newName } : {})
+      const clone = response.data
+      if (clone.id) {
+        projects.value.push(clone)
+        projects.value.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+      }
+      return clone
+    } catch (err) {
+      error.value = 'Failed to duplicate project'
+      console.error(err)
+      return null
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   const deleteProject = async (id: number) => {
     isLoading.value = true
     error.value = null
@@ -225,6 +245,7 @@ export const useProjectsStore = defineStore('projects', () => {
     fetchProjects,
     createProject,
     updateProject,
+    duplicateProject,
     deleteProject,
     addComponent,
     updateComponent,

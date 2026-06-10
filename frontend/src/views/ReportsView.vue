@@ -32,7 +32,7 @@
       <Card>
         <div class="text-center">
           <p class="text-gray-400 text-xs">Total</p>
-          <p class="text-2xl font-bold text-[#4a9eff] mt-1">{{ monthDeployments.length }}</p>
+          <p class="text-2xl font-bold text-accent mt-1">{{ monthDeployments.length }}</p>
         </div>
       </Card>
       <Card>
@@ -65,7 +65,7 @@
             class="flex items-center justify-between py-1 border-b border-[#444444]"
           >
             <span class="text-white">{{ project }}</span>
-            <span class="text-[#4a9eff] font-bold">{{ count }}</span>
+            <span class="text-accent font-bold">{{ count }}</span>
           </div>
           <div v-if="Object.keys(deploymentsByProject).length === 0" class="text-gray-400">
             No data
@@ -81,7 +81,7 @@
             class="flex items-center justify-between py-1 border-b border-[#444444]"
           >
             <span class="text-white">{{ env }}</span>
-            <span class="text-[#4a9eff] font-bold">{{ count }}</span>
+            <span class="text-accent font-bold">{{ count }}</span>
           </div>
           <div v-if="Object.keys(deploymentsByEnvironment).length === 0" class="text-gray-400">
             No data
@@ -139,6 +139,7 @@ import Button from '../components/ui/Button.vue'
 import { useDeploymentsStore } from '../stores/deployments'
 import { useProjectsStore } from '../stores/projects'
 import { useToast } from '../composables/useToast'
+import { parseTimestamp } from '../lib/utils'
 import { BarChart3 } from 'lucide-vue-next'
 
 const deploymentsStore = useDeploymentsStore()
@@ -186,8 +187,8 @@ const columns = [
     key: 'timestamp',
     label: 'Date',
     format: (value: string) => {
-      const date = new Date(value)
-      return date.toLocaleDateString()
+      const date = parseTimestamp(value)
+      return date ? date.toLocaleDateString() : '—'
     },
   },
   {
@@ -209,8 +210,8 @@ const sortedDeployments = computed(() => {
     let valA: any, valB: any
     switch (sortBy.value) {
       case 'Timestamp':
-        valA = new Date(a.timestamp).getTime()
-        valB = new Date(b.timestamp).getTime()
+        valA = parseTimestamp(a.timestamp)?.getTime() || 0
+        valB = parseTimestamp(b.timestamp)?.getTime() || 0
         break
       case 'Project':
         valA = getProjectName(a.project_id)
@@ -225,8 +226,8 @@ const sortedDeployments = computed(() => {
         valB = b.deploy_status
         break
       default:
-        valA = new Date(a.timestamp).getTime()
-        valB = new Date(b.timestamp).getTime()
+        valA = parseTimestamp(a.timestamp)?.getTime() || 0
+        valB = parseTimestamp(b.timestamp)?.getTime() || 0
     }
 
     if (typeof valA === 'string') {

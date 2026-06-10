@@ -1,0 +1,25 @@
+services:
+  chklst:
+    build: .
+    image: chklst-go:latest
+    container_name: chklst
+    # Host networking: the container shares the host's network stack, so it can reach
+    # a host-local Ollama at http://localhost:11434 without Ollama binding 0.0.0.0.
+    # The app listens on host port 8000 directly.
+    network_mode: host
+    # All runtime config (secrets, mail defaults, encryption key, auth) comes from
+    # .env — which is gitignored. Copy .env.example to .env and fill it in.
+    env_file:
+      - .env
+    environment:
+      PORT: "8000"
+    volumes:
+      # Persist the SQLite database and backups across container rebuilds.
+      - chklst-data:/app/data
+      - chklst-backups:/app/backups
+    command: ["-db", "/app/data/chklst.db", "-backup-dir", "/app/backups"]
+    restart: unless-stopped
+
+volumes:
+  chklst-data:
+  chklst-backups:

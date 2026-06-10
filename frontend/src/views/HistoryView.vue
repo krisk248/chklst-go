@@ -33,7 +33,7 @@
         <Card class="!p-2">
           <div class="flex flex-col items-center justify-center h-full">
             <p class="text-gray-400 text-xs">7 Days</p>
-            <p class="text-base font-semibold text-[#4a9eff] mt-1">{{ deploymentsLast7Days }}</p>
+            <p class="text-base font-semibold text-accent mt-1">{{ deploymentsLast7Days }}</p>
           </div>
         </Card>
         <Card class="!p-2">
@@ -66,7 +66,7 @@
           v-model="searchQuery"
           type="text"
           placeholder="Search Patch ID, Project..."
-          class="w-full pl-9 pr-3 py-1.5 text-sm bg-[#2a2a2a] border border-gray-600 rounded focus:outline-none focus:border-[#4a9eff] text-white placeholder-gray-500"
+          class="w-full pl-9 pr-3 py-1.5 text-sm bg-surface-deepest border border-gray-600 rounded focus:outline-none focus:border-accent text-white placeholder-gray-500"
         />
       </div>
 
@@ -86,7 +86,7 @@
       <!-- Project Dropdown -->
       <select
         v-model="selectedProject"
-        class="bg-[#2a2a2a] border border-gray-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#4a9eff]"
+        class="bg-surface-deepest border border-gray-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-accent"
       >
         <option value="">All Projects</option>
         <option v-for="project in projectsStore.projects" :key="project.id" :value="project.id">
@@ -97,7 +97,7 @@
       <!-- Sort Options -->
       <select
         v-model="sortOption"
-        class="bg-[#2a2a2a] border border-gray-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#4a9eff]"
+        class="bg-surface-deepest border border-gray-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-accent"
       >
         <option value="date-desc">Newest First</option>
         <option value="date-asc">Oldest First</option>
@@ -123,7 +123,7 @@
             <tr
               v-for="deployment in filteredDeployments"
               :key="deployment.id"
-              class="border-b border-gray-800 hover:bg-[#353535]"
+              class="border-b border-gray-800 hover:bg-surface"
             >
               <td class="py-2 px-3">
                 <span :class="deployment.jira_id ? 'text-white' : 'text-orange-400 italic'">
@@ -157,8 +157,14 @@
               </td>
             </tr>
             <tr v-if="filteredDeployments.length === 0">
-              <td colspan="5" class="py-8 text-center text-gray-400">
-                {{ deploymentsStore.isLoading ? 'Loading...' : 'No deployments found' }}
+              <td colspan="5">
+                <Skeleton v-if="deploymentsStore.isLoading" :rows="6" class="my-4" />
+                <EmptyState
+                  v-else
+                  title="No deployments found"
+                  description="Try a different filter, or log one from Quick Deploy."
+                  :icon="Clock"
+                />
               </td>
             </tr>
           </tbody>
@@ -190,47 +196,47 @@
           <!-- Details Grid -->
           <div class="grid grid-cols-2 gap-4">
             <div class="space-y-3">
-              <div class="p-2 bg-[#353535] rounded">
+              <div class="p-2 bg-surface rounded">
                 <p class="text-gray-400 text-xs">Patch ID</p>
                 <p class="text-white font-medium">{{ viewModal.jira_id || 'NULL' }}</p>
               </div>
-              <div class="p-2 bg-[#353535] rounded">
+              <div class="p-2 bg-surface rounded">
                 <p class="text-gray-400 text-xs">Project</p>
                 <p class="text-white font-medium">{{ getProjectName(viewModal.project_id) }}</p>
               </div>
-              <div class="p-2 bg-[#353535] rounded">
+              <div class="p-2 bg-surface rounded">
                 <p class="text-gray-400 text-xs">Component</p>
                 <p class="text-white font-medium">{{ getComponentName(viewModal.component_id) }}</p>
               </div>
-              <div class="p-2 bg-[#353535] rounded">
+              <div class="p-2 bg-surface rounded">
                 <p class="text-gray-400 text-xs">Environment</p>
                 <p class="text-white font-medium">{{ viewModal.environment || 'N/A' }}</p>
               </div>
-              <div class="p-2 bg-[#353535] rounded">
+              <div class="p-2 bg-surface rounded">
                 <p class="text-gray-400 text-xs">Developer</p>
                 <p class="text-white font-medium">{{ viewModal.developer_name || 'N/A' }}</p>
               </div>
             </div>
             <div class="space-y-3">
-              <div class="p-2 bg-[#353535] rounded">
+              <div class="p-2 bg-surface rounded">
                 <p class="text-gray-400 text-xs">Timestamp</p>
                 <p class="text-white font-medium">{{ formatDate(viewModal.timestamp) }}</p>
               </div>
-              <div class="p-2 bg-[#353535] rounded">
+              <div class="p-2 bg-surface rounded">
                 <p class="text-gray-400 text-xs">Deployed By</p>
                 <p class="text-white font-medium">{{ viewModal.deployed_by || 'N/A' }}</p>
               </div>
-              <div class="p-2 bg-[#353535] rounded">
+              <div class="p-2 bg-surface rounded">
                 <p class="text-gray-400 text-xs">Build Status</p>
                 <p :class="viewModal.build_status === 'success' ? 'text-green-400' : 'text-red-400'" class="font-medium">
                   {{ viewModal.build_status }}
                 </p>
               </div>
-              <div class="p-2 bg-[#353535] rounded">
+              <div class="p-2 bg-surface rounded">
                 <p class="text-gray-400 text-xs">DB Script</p>
                 <p class="text-white font-medium">{{ viewModal.database_script || 'No' }}</p>
               </div>
-              <div class="p-2 bg-[#353535] rounded">
+              <div class="p-2 bg-surface rounded">
                 <p class="text-gray-400 text-xs">VCS URL</p>
                 <p class="text-white font-medium text-xs break-all">{{ viewModal.vcs_url || 'N/A' }}</p>
               </div>
@@ -238,18 +244,18 @@
           </div>
 
           <!-- Notes -->
-          <div v-if="viewModal.notes" class="p-3 bg-[#353535] rounded">
+          <div v-if="viewModal.notes" class="p-3 bg-surface rounded">
             <p class="text-gray-400 text-xs mb-1">Notes</p>
             <p class="text-white">{{ viewModal.notes }}</p>
           </div>
 
           <!-- Server Info -->
           <div class="grid grid-cols-2 gap-3">
-            <div class="p-2 bg-[#353535] rounded">
+            <div class="p-2 bg-surface rounded">
               <p class="text-gray-400 text-xs">Build Server</p>
               <p class="text-white text-sm">{{ viewModal.build_server || 'N/A' }}</p>
             </div>
-            <div class="p-2 bg-[#353535] rounded">
+            <div class="p-2 bg-surface rounded">
               <p class="text-gray-400 text-xs">Deploy Server</p>
               <p class="text-white text-sm">{{ viewModal.deploy_server || 'N/A' }}</p>
             </div>
@@ -281,7 +287,7 @@
             <input
               v-model="editForm.jira_id"
               type="text"
-              class="w-full bg-[#2a2a2a] border border-gray-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-[#4a9eff]"
+              class="w-full bg-surface-deepest border border-gray-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-accent"
               placeholder="e.g., PAT-123"
             />
           </div>
@@ -291,7 +297,7 @@
               <label class="text-gray-400 text-xs block mb-1">Project</label>
               <select
                 v-model="editForm.project_id"
-                class="w-full bg-[#2a2a2a] border border-gray-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-[#4a9eff]"
+                class="w-full bg-surface-deepest border border-gray-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-accent"
               >
                 <option v-for="project in projectsStore.projects" :key="project.id" :value="project.id">
                   {{ project.name }}
@@ -302,7 +308,7 @@
               <label class="text-gray-400 text-xs block mb-1">Component</label>
               <select
                 v-model="editForm.component_id"
-                class="w-full bg-[#2a2a2a] border border-gray-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-[#4a9eff]"
+                class="w-full bg-surface-deepest border border-gray-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-accent"
               >
                 <option v-for="comp in selectedProjectComponents" :key="comp.id" :value="comp.id">
                   {{ comp.name }}
@@ -316,7 +322,7 @@
             <input
               v-model="editForm.developer_name"
               type="text"
-              class="w-full bg-[#2a2a2a] border border-gray-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-[#4a9eff]"
+              class="w-full bg-surface-deepest border border-gray-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-accent"
             />
           </div>
 
@@ -354,7 +360,7 @@
             <textarea
               v-model="editForm.notes"
               rows="2"
-              class="w-full bg-[#2a2a2a] border border-gray-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-[#4a9eff]"
+              class="w-full bg-surface-deepest border border-gray-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-accent"
             ></textarea>
           </div>
         </div>
@@ -398,12 +404,15 @@
 import { computed, onMounted, ref } from 'vue'
 import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
+import EmptyState from '../components/ui/EmptyState.vue'
+import Skeleton from '../components/ui/Skeleton.vue'
 import { useDeploymentsStore, type Deployment } from '../stores/deployments'
 import { useProjectsStore } from '../stores/projects'
 import { useSettingsStore } from '../stores/settings'
+import { parseTimestamp } from '../lib/utils'
 import { useClipboard, type DeploymentData } from '../composables/useClipboard'
 import { useToast } from '../composables/useToast'
-import { RefreshCw, Copy, X, Save, Trash2, AlertTriangle, Search } from 'lucide-vue-next'
+import { RefreshCw, Copy, X, Save, Trash2, AlertTriangle, Search, Clock } from 'lucide-vue-next'
 
 const deploymentsStore = useDeploymentsStore()
 const projectsStore = useProjectsStore()
@@ -478,6 +487,9 @@ const successCount = computed(() => {
   return filteredDeployments.value.filter(d => d.deploy_status === 'success').length
 })
 
+// Epoch millis for sorting; unparseable timestamps sort last (0).
+const tsValue = (ts?: string) => parseTimestamp(ts)?.getTime() || 0
+
 const filteredDeployments = computed(() => {
   const now = new Date()
   let filtered = [...deploymentsStore.deployments]
@@ -497,12 +509,15 @@ const filteredDeployments = computed(() => {
   if (!activeFilters.value.includes('all')) {
     if (activeFilters.value.includes('week')) {
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      filtered = filtered.filter(d => new Date(d.timestamp) >= weekAgo)
+      filtered = filtered.filter(d => {
+        const date = parseTimestamp(d.timestamp)
+        return date !== null && date >= weekAgo
+      })
     }
     if (activeFilters.value.includes('month')) {
       filtered = filtered.filter(d => {
-        const date = new Date(d.timestamp)
-        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+        const date = parseTimestamp(d.timestamp)
+        return date !== null && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
       })
     }
   }
@@ -515,16 +530,16 @@ const filteredDeployments = computed(() => {
   // Apply sorting
   switch (sortOption.value) {
     case 'date-desc':
-      filtered.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      filtered.sort((a, b) => tsValue(b.timestamp) - tsValue(a.timestamp))
       break
     case 'date-asc':
-      filtered.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+      filtered.sort((a, b) => tsValue(a.timestamp) - tsValue(b.timestamp))
       break
     case 'null-first':
       filtered.sort((a, b) => {
         if (!a.jira_id && b.jira_id) return -1
         if (a.jira_id && !b.jira_id) return 1
-        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        return tsValue(b.timestamp) - tsValue(a.timestamp)
       })
       break
     case 'project':
@@ -538,25 +553,32 @@ const filteredDeployments = computed(() => {
 const deploymentsLast7Days = computed(() => {
   const now = new Date()
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-  return deploymentsStore.deployments.filter(d => new Date(d.timestamp) >= sevenDaysAgo).length
+  return deploymentsStore.deployments.filter(d => {
+    const date = parseTimestamp(d.timestamp)
+    return date !== null && date >= sevenDaysAgo
+  }).length
 })
 
 const deploymentsLast30Days = computed(() => {
   const now = new Date()
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-  return deploymentsStore.deployments.filter(d => new Date(d.timestamp) >= thirtyDaysAgo).length
+  return deploymentsStore.deployments.filter(d => {
+    const date = parseTimestamp(d.timestamp)
+    return date !== null && date >= thirtyDaysAgo
+  }).length
 })
 
 const deploymentsThisMonth = computed(() => {
   const now = new Date()
   return deploymentsStore.deployments.filter(d => {
-    const date = new Date(d.timestamp)
-    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+    const date = parseTimestamp(d.timestamp)
+    return date !== null && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
   }).length
 })
 
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
+  const date = parseTimestamp(dateString)
+  if (!date) return '—'
   const day = date.getDate().toString().padStart(2, '0')
   const month = (date.getMonth() + 1).toString().padStart(2, '0')
   const year = date.getFullYear()

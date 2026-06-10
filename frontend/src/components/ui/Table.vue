@@ -1,7 +1,7 @@
 <template>
-  <div class="overflow-x-auto rounded-lg border border-[#555555]">
+  <div class="overflow-x-auto rounded-lg border border-surface-border">
     <table class="w-full">
-      <thead class="bg-[#404040] border-b border-[#555555]">
+      <thead class="bg-surface-light border-b border-surface-border">
         <tr>
           <th v-for="column in columns" :key="column.key" class="px-4 py-3 text-left text-sm font-medium text-gray-300 whitespace-nowrap">
             {{ column.label }}
@@ -15,7 +15,7 @@
         <tr
           v-for="(row, idx) in data"
           :key="idx"
-          class="border-b border-[#555555] hover:bg-[#404040] transition-colors"
+          class="border-b border-surface-border hover:bg-surface-light transition-colors"
         >
           <td
             v-for="column in columns"

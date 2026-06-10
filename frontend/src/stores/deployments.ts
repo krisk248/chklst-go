@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useApi } from '../composables/useApi'
+import { parseTimestamp } from '../lib/utils'
 
 export interface Deployment {
   id?: number
@@ -98,8 +99,8 @@ export const useDeploymentsStore = defineStore('deployments', () => {
   }
 
   const recentDeployments = computed(() => {
-    return deployments.value
-      .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())
+    return [...deployments.value]
+      .sort((a, b) => (parseTimestamp(b.created_at)?.getTime() || 0) - (parseTimestamp(a.created_at)?.getTime() || 0))
       .slice(0, 10)
   })
 
@@ -109,8 +110,8 @@ export const useDeploymentsStore = defineStore('deployments', () => {
 
   const getDeploymentsByMonth = (month: number, year: number) => {
     return deployments.value.filter(d => {
-      const date = new Date(d.timestamp)
-      return date.getMonth() === month - 1 && date.getFullYear() === year
+      const date = parseTimestamp(d.timestamp)
+      return date !== null && date.getMonth() === month - 1 && date.getFullYear() === year
     })
   }
 

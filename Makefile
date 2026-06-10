@@ -14,11 +14,6 @@ deps: ## Install Go dependencies
 	@go mod tidy
 	@echo "✅ Dependencies installed"
 
-install-python: ## Install Python dependencies
-	@echo "🐍 Installing Python dependencies..."
-	@cd python-service && pip install -r requirements.txt
-	@echo "✅ Python dependencies installed"
-
 dev: ## Quick development build
 	@./build/dev-build.sh
 
@@ -28,16 +23,9 @@ build: ## Full production build
 build-all: ## Build for all platforms
 	@BUILD_ALL_PLATFORMS=true ./build/build.sh
 
-build-embedded: ## Build with embedded Python service
-	@BUILD_PYTHON=true ./build/build.sh
-
 run: ## Run the application
 	@echo "🚀 Starting chklst-go..."
 	@go run cmd/chklst/main.go
-
-run-python: ## Run Python microservice standalone
-	@echo "🐍 Starting Python reports service..."
-	@cd python-service && python main.py
 
 test: ## Run tests
 	@echo "🧪 Running tests..."
@@ -73,14 +61,31 @@ migrate-db: ## Copy existing database
 	@cp ../chklst.db ./chklst.db 2>/dev/null || echo "Note: ../chklst.db not found"
 	@echo "✅ Database ready"
 
-docker-build: ## Build Docker image
-	@echo "🐳 Building Docker image..."
-	@docker build -t chklst-go:latest .
-	@echo "✅ Docker image built"
+# --- Docker Compose workflow ---
+# A clean throwaway docker config dir avoids the host's `credsStore` credential-helper
+# error during registry pulls. (Permanent fix: remove "credsStore" from ~/.docker/config.json.)
+DOCKER_CFG := /tmp/chklst-dockercfg
+COMPOSE := DOCKER_CONFIG=$(DOCKER_CFG) docker compose
 
-docker-run: ## Run in Docker container
-	@echo "🐳 Running Docker container..."
-	@docker run -p 8000:8000 -v $(PWD)/chklst.db:/app/chklst.db chklst-go:latest
+$(DOCKER_CFG)/config.json:
+	@mkdir -p $(DOCKER_CFG) && printf '{}' > $(DOCKER_CFG)/config.json
+
+up redeploy: $(DOCKER_CFG)/config.json ## Rebuild image from Dockerfile and (re)start on :8000
+	@echo "🐳 Rebuilding + starting chklst..."
+	@$(COMPOSE) up -d --build
+	@echo "✅ chklst running at http://localhost:8000"
+
+down: ## Stop and remove the container (keeps data volumes)
+	@$(COMPOSE) down
+
+logs: ## Follow container logs (Parson scheduler, requests)
+	@$(COMPOSE) logs -f
+
+ps: ## Show container status
+	@$(COMPOSE) ps
+
+docker-build: $(DOCKER_CFG)/config.json ## Build the image only
+	@$(COMPOSE) build
 
 # Default target
 .DEFAULT_GOAL := help

@@ -14,6 +14,18 @@ const apiClient: AxiosInstance = axios.create({
   },
 })
 
+// On a 401 (session expired / auth required), flip the auth gate. Imported lazily
+// to avoid a circular import with the auth store.
+apiClient.interceptors.response.use(
+  (r) => r,
+  (err: AxiosError) => {
+    if (err.response?.status === 401 && !err.config?.url?.includes('/auth/')) {
+      import('../stores/auth').then(({ useAuthStore }) => useAuthStore().onUnauthorized())
+    }
+    return Promise.reject(err)
+  }
+)
+
 export function useApi() {
   const error = ref<AxiosError | null>(null)
   const isLoading = ref(false)

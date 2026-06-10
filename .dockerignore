@@ -1,0 +1,26 @@
+# Build artifacts
+frontend/dist/
+frontend/node_modules/
+node_modules/
+build/output/
+chklst
+chklst-dev
+
+# Local databases and backups (must not leak into the image)
+*.db
+*.db-shm
+*.db-wal
+backups/
+
+# Dev / VCS / docs noise
+.git/
+.github/
+*.log
+*.md
+docs/
+.vscode/
+.idea/
+
+# Local scratch files
+subfinder.txt
+token.txt

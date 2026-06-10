@@ -225,19 +225,19 @@
     <!-- Quick Stats -->
     <Card title="Data Summary">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
-        <div class="p-3 bg-[#353535] rounded">
+        <div class="p-3 bg-surface rounded">
           <p class="text-gray-400 text-xs">Total Records</p>
-          <p class="text-2xl font-bold text-[#4a9eff]">{{ deploymentsStore.deployments.length }}</p>
+          <p class="text-2xl font-bold text-accent">{{ deploymentsStore.deployments.length }}</p>
         </div>
-        <div class="p-3 bg-[#353535] rounded">
+        <div class="p-3 bg-surface rounded">
           <p class="text-gray-400 text-xs">Projects</p>
           <p class="text-2xl font-bold text-green-400">{{ projectsStore.projects.length }}</p>
         </div>
-        <div class="p-3 bg-[#353535] rounded">
+        <div class="p-3 bg-surface rounded">
           <p class="text-gray-400 text-xs">This Month</p>
           <p class="text-2xl font-bold text-purple-400">{{ thisMonthCount }}</p>
         </div>
-        <div class="p-3 bg-[#353535] rounded">
+        <div class="p-3 bg-surface rounded">
           <p class="text-gray-400 text-xs">Success Rate</p>
           <p class="text-2xl font-bold text-blue-400">{{ successRate }}%</p>
         </div>
@@ -250,7 +250,7 @@
         <div
           v-for="(exp, idx) in exportHistory"
           :key="idx"
-          class="flex items-center justify-between p-2 bg-[#353535] rounded text-sm"
+          class="flex items-center justify-between p-2 bg-surface rounded text-sm"
         >
           <div class="flex items-center gap-2">
             <component :is="getExportIcon(exp.format)" class="w-4 h-4 text-gray-400" />
@@ -285,6 +285,7 @@ import {
   BarChart3,
   AlertTriangle
 } from 'lucide-vue-next'
+import { parseTimestamp } from '../lib/utils'
 
 const deploymentsStore = useDeploymentsStore()
 const projectsStore = useProjectsStore()
@@ -329,8 +330,8 @@ const projectNames = computed(() =>
 const thisMonthCount = computed(() => {
   const now = new Date()
   return deploymentsStore.deployments.filter(d => {
-    const date = new Date(d.timestamp)
-    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+    const date = parseTimestamp(d.timestamp)
+    return date !== null && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
   }).length
 })
 
@@ -367,8 +368,8 @@ const filterDeployments = (type: string, project?: string, month?: string, year?
     const monthIndex = monthOptions.indexOf(month || '')
     const yearNum = parseInt(year || new Date().getFullYear().toString())
     filtered = filtered.filter(d => {
-      const date = new Date(d.timestamp)
-      return date.getMonth() === monthIndex && date.getFullYear() === yearNum
+      const date = parseTimestamp(d.timestamp)
+      return date !== null && date.getMonth() === monthIndex && date.getFullYear() === yearNum
     })
   }
 
@@ -383,12 +384,12 @@ const filterDeployments = (type: string, project?: string, month?: string, year?
     filtered = filtered.filter(d => d.deploy_status === 'failed' || d.build_status === 'failed')
   }
 
-  return filtered.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+  return filtered.sort((a, b) => (parseTimestamp(b.timestamp)?.getTime() || 0) - (parseTimestamp(a.timestamp)?.getTime() || 0))
 }
 
 const formatDeploymentForExport = (d: Deployment) => ({
   'Patch ID': d.jira_id || 'N/A',
-  'Timestamp': new Date(d.timestamp).toLocaleString(),
+  'Timestamp': parseTimestamp(d.timestamp)?.toLocaleString() || '—',
   'Project': getProjectName(d.project_id),
   'Component': getComponentName(d.component_id),
   'Environment': d.environment || 'N/A',
@@ -576,7 +577,7 @@ const exportPDF = async (type: string) => {
           ${data.map(d => `
             <tr>
               <td>${d.jira_id || 'N/A'}</td>
-              <td>${new Date(d.timestamp).toLocaleDateString()}</td>
+              <td>${parseTimestamp(d.timestamp)?.toLocaleDateString() || '—'}</td>
               <td>${getProjectName(d.project_id)}</td>
               <td>${getComponentName(d.component_id)}</td>
               <td class="${d.build_status}">${d.build_status}</td>

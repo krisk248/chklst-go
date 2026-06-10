@@ -8,6 +8,8 @@ import ExportView from '../views/ExportView.vue'
 import AnalysisView from '../views/AnalysisView.vue'
 import SettingsView from '../views/SettingsView.vue'
 import AboutView from '../views/AboutView.vue'
+import DailySummaryView from '../views/DailySummaryView.vue'
+import ActivityView from '../views/ActivityView.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -15,8 +17,20 @@ const routes: RouteRecordRaw[] = [
     redirect: '/deployment',
   },
   {
+    path: '/daily-summary',
+    name: 'daily-summary',
+    component: DailySummaryView,
+    meta: { title: 'Daily Summary' },
+  },
+  {
+    path: '/parson-activity',
+    name: 'parson-activity',
+    component: ActivityView,
+    meta: { title: 'Parson Activity' },
+  },
+  {
     path: '/deployment',
-    name: 'Deployment',
+    name: 'quick-deploy',
     component: DeploymentView,
     meta: { title: 'Quick Deploy' },
   },

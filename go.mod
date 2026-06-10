@@ -1,6 +1,8 @@
 module chklst-go
 
-go 1.21
+go 1.21.0
+
+toolchain go1.22.2
 
 require (
 	github.com/gofiber/fiber/v3 v3.0.0-beta.3
@@ -18,6 +20,7 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-sqlite3 v1.14.22 // indirect
+	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.55.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
