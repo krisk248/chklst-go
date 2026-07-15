@@ -1,0 +1,23 @@
+# Parallel DEV instance on port 9000 — runs the in-progress branch against a COPY of
+# real data, isolated from the stable :8000 instance. Its scheduler is disabled so it
+# never emails the team. Use:  make dev-up / make dev-logs / make dev-down
+services:
+  chklst-dev:
+    build: .
+    image: chklst-go:dev
+    container_name: chklst-dev
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      PORT: "9000"
+      DISABLE_SCHEDULER: "true" # never auto-send from the dev instance
+    volumes:
+      - chklst-dev-data:/app/data
+      - chklst-dev-backups:/app/backups
+    command: ["-db", "/app/data/chklst.db", "-backup-dir", "/app/backups"]
+    restart: unless-stopped
+
+volumes:
+  chklst-dev-data:
+  chklst-dev-backups:

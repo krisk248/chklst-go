@@ -136,6 +136,8 @@ export const useProjectsStore = defineStore('projects', () => {
       )
       const project = projects.value.find(p => p.id === projectId)
       if (project) {
+        // components can be missing on projects that had none (API omits the key)
+        if (!project.components) project.components = []
         project.components.push(response.data)
       }
       return response.data
@@ -161,7 +163,7 @@ export const useProjectsStore = defineStore('projects', () => {
         component
       )
       const project = projects.value.find(p => p.id === projectId)
-      if (project) {
+      if (project && project.components) {
         const idx = project.components.findIndex(c => c.id === componentId)
         if (idx > -1) {
           project.components[idx] = response.data
@@ -184,7 +186,7 @@ export const useProjectsStore = defineStore('projects', () => {
       await deleteApi(`/projects/${projectId}/components/${componentId}`)
       const project = projects.value.find(p => p.id === projectId)
       if (project) {
-        project.components = project.components.filter(c => c.id !== componentId)
+        project.components = (project.components || []).filter(c => c.id !== componentId)
       }
     } catch (err) {
       error.value = 'Failed to delete component'

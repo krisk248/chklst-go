@@ -56,7 +56,9 @@ type Project struct {
 	UpdatedAt      time.Time    `json:"updated_at"`
 
 	// Relationships
-	Components  []Component  `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"components,omitempty"`
+	// Components must NOT be omitempty: a project with zero components would lose
+	// the key entirely and the frontend store crashes on components.push(...).
+	Components  []Component  `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"components"`
 	Deployments []Deployment `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"deployments,omitempty"`
 }
 
@@ -158,6 +160,11 @@ type Settings struct {
 	// alongside the day-specific planned activities.
 	PlannedWeekly string `gorm:"type:text" json:"planned_weekly"`
 
+	// Git Insights (GitHub). Token is encrypted at rest (see hooks below).
+	GitHubToken string `json:"github_token"` // PAT with repo read access
+	GitHubOwner string `json:"github_owner"` // user or org login
+	GitHubRepos string `json:"github_repos"` // comma-separated repo names; blank = all owner repos
+
 	// Parson agent configuration.
 	// ParsonSystemPrompt overrides the built-in system prompt; blank = use default.
 	ParsonSystemPrompt string  `gorm:"type:text" json:"parson_system_prompt"`
@@ -196,12 +203,14 @@ func (s *Settings) encryptSecrets() {
 	s.SMTPPassword = crypto.Encrypt(s.SMTPPassword)
 	s.JiraToken = crypto.Encrypt(s.JiraToken)
 	s.TeamsWebhookURL = crypto.Encrypt(s.TeamsWebhookURL)
+	s.GitHubToken = crypto.Encrypt(s.GitHubToken)
 }
 
 func (s *Settings) decryptSecrets() {
 	s.SMTPPassword = crypto.Decrypt(s.SMTPPassword)
 	s.JiraToken = crypto.Decrypt(s.JiraToken)
 	s.TeamsWebhookURL = crypto.Decrypt(s.TeamsWebhookURL)
+	s.GitHubToken = crypto.Decrypt(s.GitHubToken)
 }
 
 // BeforeSave encrypts secrets just before they hit the DB.

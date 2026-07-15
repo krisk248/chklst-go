@@ -52,6 +52,7 @@ import {
   TrendingUp,
   Sparkles,
   Activity,
+  GitBranch,
 } from 'lucide-vue-next'
 
 useRoute()
@@ -71,6 +72,7 @@ const menuGroups = [
     items: [
       { path: '/daily-summary', label: 'Daily Summary', icon: Sparkles },
       { path: '/parson-activity', label: 'Parson Activity', icon: Activity },
+      { path: '/git-insights', label: 'Git Insights', icon: GitBranch },
       { path: '/analysis', label: 'Analysis', icon: TrendingUp },
       { path: '/reports', label: 'Reports', icon: BarChart3 },
       { path: '/export', label: 'Export', icon: Download },

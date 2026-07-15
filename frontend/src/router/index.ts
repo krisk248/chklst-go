@@ -10,6 +10,7 @@ import SettingsView from '../views/SettingsView.vue'
 import AboutView from '../views/AboutView.vue'
 import DailySummaryView from '../views/DailySummaryView.vue'
 import ActivityView from '../views/ActivityView.vue'
+import GitInsightsView from '../views/GitInsightsView.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -27,6 +28,12 @@ const routes: RouteRecordRaw[] = [
     name: 'parson-activity',
     component: ActivityView,
     meta: { title: 'Parson Activity' },
+  },
+  {
+    path: '/git-insights',
+    name: 'git-insights',
+    component: GitInsightsView,
+    meta: { title: 'Git Insights' },
   },
   {
     path: '/deployment',

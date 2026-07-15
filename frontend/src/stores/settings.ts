@@ -42,6 +42,11 @@ export interface AppSettings {
   summary_send_time: string
   summary_weekdays: string
   summary_auto_send: boolean
+
+  // Git Insights (GitHub)
+  github_token: string
+  github_owner: string
+  github_repos: string
 }
 
 export const useSettingsStore = defineStore('settings', () => {
@@ -80,6 +85,10 @@ export const useSettingsStore = defineStore('settings', () => {
     summary_send_time: '20:00',
     summary_weekdays: '0,1,2,3,4',
     summary_auto_send: true,
+    // Git Insights
+    github_token: '',
+    github_owner: '',
+    github_repos: '',
   })
   const isLoading = ref(false)
   const error = ref<string | null>(null)
