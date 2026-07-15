@@ -297,8 +297,9 @@ func generateSummaryRow(summary *database.DailySummary, settings database.Settin
 const defaultTemperature = 0.4
 
 const summarySystemPrompt = `You write a daily deployment status email for a DevOps engineer to send to their team.
-Use ONLY the facts the user provides. Never invent deployments, ticket numbers, projects, components, environments, or dates.
-Be concise and professional. No greeting, no sign-off, no preamble. Output ONLY the email.
+Use ONLY the facts the user provides. Never invent deployments, ticket numbers, projects, components, environments, dates, or notes.
+Be concise and professional. Correct any spelling and grammar mistakes in the user's notes, but keep their meaning.
+No greeting, no sign-off, no preamble. Output ONLY the email, in plain text (no markdown, no bold, no asterisks).
 
 Use EXACTLY this structure:
 
@@ -306,7 +307,11 @@ Subject: Daily Activity Report – <Month D, YYYY>
 
 Today's Activities:
 - Patch Deployments Completed (<N> Total) — <ENVIRONMENT>
-   - <PAT-NUMBER> — <Project> (<Component>): Deployed to <ENVIRONMENT>
+   - <PAT-NUMBER>
+      - <Project> (<Component>)
+      - Deployed to <ENVIRONMENT>
+      - Notes: <notes>
+      - Time: <time>
 - <each extra activity from notes as its own bullet, if any>
 
 Planned Activities:
@@ -317,8 +322,14 @@ Road Blocks / Suggestions:
 
 Rules:
 - The subject date must use the full month name, e.g. "June 8, 2026".
-- Under "Patch Deployments Completed (N Total) — ENV": N is the count for that environment; list one indented line per patch as "PAT-NUMBER — Project (Component): Deployed to ENV". If patches span multiple environments, repeat the header for each environment.
+- Under "Patch Deployments Completed (N Total) — ENV": N is the count of deployments for that environment. If patches span multiple environments, repeat the header for each environment.
+- Each deployment is given as: jira | project | component | environment | status | time | notes.
+- Write one block per deployment: the PAT number as its own indented line, then beneath it four bullet lines in this exact order: project (component), "Deployed to <ENV>", "Notes: <notes>", "Time: <time>".
+- If the same PAT number was deployed more than once, write a separate block for each deployment, repeating the PAT number line.
+- If a deployment's notes value is "none", leave the Notes line out entirely. ALWAYS include the Time line.
+- Copy the time exactly as given (e.g. "5:42 PM"). Never write a date on deployment lines — only the time.
 - If a patch has no component, write just the project name without parentheses.
+- For deployments whose jira value is "(no JIRA)", the block's first line reads exactly: No JIRA ID
 - If there are NO patch deployments, write under Today's Activities exactly: "- No patches deployed today." Then if the notes describe other work, add those as bullets.
 - If no planned activities are given, output exactly: "- Nothing specified."
 - If no roadblocks are given, output exactly: "- No roadblocks."
@@ -327,9 +338,21 @@ Example (format reference only — do NOT reuse this data):
 Subject: Daily Activity Report – April 21, 2026
 
 Today's Activities:
-- Patch Deployments Completed (2 Total) — QA
-   - PAT-652 — MBANK (MBANK-BE): Deployed to QA
-   - PAT-654 — ADX-IPO (ADXIPO): Deployed to QA
+- Patch Deployments Completed (3 Total) — QA
+   - PAT-652
+      - MBANK (MBANK-BE)
+      - Deployed to QA
+      - Notes: Payment gateway config updated
+      - Time: 10:15 AM
+   - PAT-652
+      - MBANK (MBANK-FE)
+      - Deployed to QA
+      - Time: 10:40 AM
+   - No JIRA ID
+      - ADX-IPO (ADXIPO)
+      - Deployed to QA
+      - Notes: Hotfix for login page
+      - Time: 2:30 PM
 
 Planned Activities:
 - Nothing specified.
@@ -353,7 +376,7 @@ func buildSummaryPrompt(s database.DailySummary, deps []database.Deployment, sta
 	var b strings.Builder
 	fmt.Fprintf(&b, "DATE: %s\n\n", niceDate(s.Date))
 
-	fmt.Fprintf(&b, "PATCH DEPLOYMENTS (%d):\n", len(deps))
+	fmt.Fprintf(&b, "PATCH DEPLOYMENTS (%d) (jira | project | component | environment | status | time | notes):\n", len(deps))
 	if len(deps) == 0 {
 		b.WriteString("- none\n")
 	}
@@ -366,8 +389,10 @@ func buildSummaryPrompt(s database.DailySummary, deps []database.Deployment, sta
 		if d.Component != nil && d.Component.Name != "" {
 			comp = d.Component.Name
 		}
-		fmt.Fprintf(&b, "- %s | %s | %s | %s | %s\n",
-			jira, projectLabel(d), orDash(comp), orUnknown(d.Environment), orUnknown(d.DeployStatus))
+		fmt.Fprintf(&b, "- %s | %s | %s | %s | %s | %s | %s\n",
+			jira, projectLabel(d), orDash(comp), orUnknown(d.Environment), orUnknown(d.DeployStatus),
+			d.Timestamp.In(time.Local).Format("3:04 PM"),
+			orNone(clip(d.Notes)))
 	}
 
 	// Planned = standing weekly plan + day-specific plan.
