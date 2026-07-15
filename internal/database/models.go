@@ -56,7 +56,9 @@ type Project struct {
 	UpdatedAt      time.Time    `json:"updated_at"`
 
 	// Relationships
-	Components  []Component  `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"components,omitempty"`
+	// Components must NOT be omitempty: a project with zero components would lose
+	// the key entirely and the frontend store crashes on components.push(...).
+	Components  []Component  `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"components"`
 	Deployments []Deployment `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"deployments,omitempty"`
 }
 
